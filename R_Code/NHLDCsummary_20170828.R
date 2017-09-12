@@ -1,50 +1,50 @@
-# NHLD model summary; JAZ 2017-03-26 
-
-rm(list=ls())
+# # NHLD model summary; JAZ 2017-03-26 
+# 
+# rm(list=ls())
 library(LSD)
 library(maptools)
 library(Hmisc)
-
-dir<-'D:/Jake/My Papers/NHLD Carbon Model/Results/20170818/'
-files=list.files(dir)
-# files=files[780:801]
-skip=6*365 # days to skip 
-
-sum<-data.frame() # only open ice  
-all<-data.frame()
-val<-data.frame()
-for(i in 1:length(files)){
-  cur<-read.table(file.path(dir,files[i]),stringsAsFactors = F,sep='\t',header=T)
-  lake<-strsplit(files[i],'_C_model.txt',fixed = T)[[1]]
-  cur<-na.omit(cur)
-  if(length(cur$time)<2){
-    next
-  }
-  curVal=cur[skip:nrow(cur),]
-  curVal=curVal[curVal$LakeE>0&as.Date(curVal$datetime)>as.Date('2004-01-01')&as.Date(curVal$datetime)<as.Date('2004-12-31'),]
-  curVal=curVal[,3:ncol(curVal)]
-  cur<-cur[skip:(nrow(cur)-0),3:ncol(cur)] # skipping first X number of days 
-  cur<-cur[cur$Vol>0,] # only keeping days when there's actually water 
-  curSum=cur[cur$LakeE>0,] # only open ice periods
- 
-  cur<-data.frame(t(apply(cur,MARGIN = 2,FUN = mean)))
-  curSum<-data.frame(t(apply(curSum,MARGIN = 2,FUN = mean)))
-  curVal<-data.frame(t(apply(curVal,MARGIN = 2,FUN=mean)))
-  cur$Permanent_<-lake
-  curSum$Permanent_<-lake
-  curVal$Permanent_<-lake
-  
-  sum<-rbind(sum,curSum)
-  all<-rbind(all,cur)
-  val<-rbind(val,curVal)
-}
-
-sum2=sum
+# 
+# dir<-'D:/Jake/My Papers/NHLD Carbon Model/Results/20170818/'
+# files=list.files(dir)
+# # files=files[780:801]
+# skip=6*365 # days to skip 
+# 
+# sum<-data.frame() # only open ice  
+# all<-data.frame()
+# val<-data.frame()
+# for(i in 1:length(files)){
+#   cur<-read.table(file.path(dir,files[i]),stringsAsFactors = F,sep='\t',header=T)
+#   lake<-strsplit(files[i],'_C_model.txt',fixed = T)[[1]]
+#   cur<-na.omit(cur)
+#   if(length(cur$time)<2){
+#     next
+#   }
+#   curVal=cur[skip:nrow(cur),]
+#   curVal=curVal[curVal$LakeE>0&as.Date(curVal$datetime)>as.Date('2004-01-01')&as.Date(curVal$datetime)<as.Date('2004-12-31'),]
+#   curVal=curVal[,3:ncol(curVal)]
+#   cur<-cur[skip:(nrow(cur)-0),3:ncol(cur)] # skipping first X number of days 
+#   cur<-cur[cur$Vol>0,] # only keeping days when there's actually water 
+#   curSum=cur[cur$LakeE>0,] # only open ice periods
+#  
+#   cur<-data.frame(t(apply(cur,MARGIN = 2,FUN = mean)))
+#   curSum<-data.frame(t(apply(curSum,MARGIN = 2,FUN = mean)))
+#   curVal<-data.frame(t(apply(curVal,MARGIN = 2,FUN=mean)))
+#   cur$Permanent_<-lake
+#   curSum$Permanent_<-lake
+#   curVal$Permanent_<-lake
+#   
+#   sum<-rbind(sum,curSum)
+#   all<-rbind(all,cur)
+#   val<-rbind(val,curVal)
+# }
+# 
+# sum2=sum
 
 # 
-load('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/R Data/LakeCsummary_20170828.RData')
+load('/Users/jzwart/NHLD_C_Model/R_Data/LakeCsummary_20170828.RData')
 
-watersheds<-read.table('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Data/C model forcing data/NHLDsheds_20170323.txt',
+watersheds<-read.table('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Data/C model forcing data/NHLDsheds_20170323.txt',
                        stringsAsFactors = F,header=T,sep = '\t')
 
 sum=merge(sum,watersheds,by='Permanent_')
@@ -128,13 +128,13 @@ plot(log10(sum$DOC_Load)~sum$HRT)
 
 # sum$DOC_conc=(sum$DOCr_epi+sum$DOCl_epi+sum$DOCl_hypo+sum$DOCr_hypo)/(sum$Vepi+sum$Vhypo)*12
 
-litFracRet<-read.csv('/Users/Jake/Documents/Jake/Conferences/2015/Gordon Research Conference/GRC/DrainageVseepage_Cretention.csv',
+litFracRet<-read.csv('/Users/jzwart/Documents/Jake/Conferences/2015/Gordon Research Conference/GRC/DrainageVseepage_Cretention.csv',
                      stringsAsFactor=F)
 sum$percentEvap<-sum$LakeE/(sum$LakeE+sum$GWout+sum$SWout)
 all$percentEvap<-all$LakeE/(all$LakeE+all$GWout+all$SWout)
 
 windows()
-png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig3_fracRet_HRT.png',width = 7,
+png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig3_fracRet_HRT.png',width = 7,
     height=7,units = 'in',res = 300)
 par(mar=c(6,6,5,2))
 cex.axis=2.5
@@ -154,7 +154,7 @@ legend('topleft',legend = c('Modeled','Literature Drainage','Literature Seepage'
       col=c('grey 40','blue','red'),bty = 'n',pch = 19,cex = 1.5,pt.cex = 2)
 dev.off()
 
-png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig3_DOCrespired_HRT.png',width = 7,
+png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig3_DOCrespired_HRT.png',width = 7,
     height=7,units = 'in',res = 300)
 par(mar=c(6,6,5,2))
 cex.axis=2.5
@@ -188,7 +188,7 @@ dev.off()
 
 
 windows()
-png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig3_d_HRT.png',width = 7,
+png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig3_d_HRT.png',width = 7,
     height=7,units = 'in',res = 300)
 par(mar=c(6,6,5,2))
 cex.axis=2.5
@@ -200,7 +200,7 @@ heatscatter(log10(all$HRT),all$emergent_d_epi,pch = 19,colpal = col,cex=cex,main
 axis(1,at = c(log10(0.10),log10(1),log10(10),log10(100),log10(1000)),labels = c(0.1,1,10,100,1000),cex.axis=cex.axis)
 dev.off()
 
-png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig3_d_fracEvap.png',width = 7,
+png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig3_d_fracEvap.png',width = 7,
     height=7,units = 'in',res = 300)
 par(mar=c(6,6,5,2))
 cex.axis=2.5
@@ -215,7 +215,7 @@ res=resid(lm(all$emergent_d_epi~log10(all$percentEvap)))
 plot(res~all$meanDepth)
 summary(lm(res~all$meanDepth))
 
-png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig3_d_HRT_logged.png',width = 7,
+png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig3_d_HRT_logged.png',width = 7,
     height=7,units = 'in',res = 300)
 par(mar=c(6,6,5,2))
 cex.axis=2.5
@@ -302,7 +302,7 @@ abline(0,1)
 
 
 windows()
-png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig3_fracRet_RespRate.png',width = 7,
+png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig3_fracRet_RespRate.png',width = 7,
     height=7,units = 'in',res = 300)
 par(mar=c(6,6,5,2))
 cex.axis=2.5
@@ -314,7 +314,7 @@ heatscatter(all$FracRet,log10(all$DOC_Respired/all$Area*12*365),pch = 19,colpal 
 axis(2,at = c(log10(0.10),log10(1),log10(10),log10(100),log10(1000)),labels = c(0.1,1,10,100,1000),cex.axis=cex.axis)
 dev.off()
 
-png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig3_fracRet_fracEvap.png',width = 7,
+png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig3_fracRet_fracEvap.png',width = 7,
     height=7,units = 'in',res = 300)
 par(mar=c(6,6,5,2))
 cex.axis=2.5
@@ -353,7 +353,7 @@ summary(lm(all$FracRet~all$percentEvap))
 
 
 
-png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig3_emit_fracEvap.png',width = 7,
+png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig3_emit_fracEvap.png',width = 7,
     height=7,units = 'in',res = 300)
 par(mar=c(6,6,5,2))
 cex.axis=2.5
@@ -365,7 +365,7 @@ heatscatter(all$percentEvap,log10(all$Emit/all$Area*12*365),pch = 19,colpal = co
 axis(2,at = c(log10(1),log10(10),log10(100),log10(1000)),labels = c(1,10,100,1000),cex.axis=cex.axis)
 dev.off()
 
-png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig3_emit_NEP.png',width = 7,
+png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig3_emit_NEP.png',width = 7,
     height=7,units = 'in',res = 300)
 par(mar=c(6,6,5,2))
 cex.axis=2.5
@@ -377,7 +377,7 @@ heatscatter(sum$NEP/sum$Area*12*1000,log10(all$Emit/all$Area*12*365),pch = 19,co
 axis(2,at = c(log10(1),log10(10),log10(100),log10(1000)),labels = c(1,10,100,1000),cex.axis=cex.axis)
 dev.off()
 
-png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig3_burial_fracEvap.png',width = 7,
+png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig3_burial_fracEvap.png',width = 7,
     height=7,units = 'in',res = 300)
 par(mar=c(6,6,5,2))
 cex.axis=2.5
@@ -391,7 +391,7 @@ dev.off()
 
 summary(lm(log10((all$Burial_tPOC+all$Burial_phyto)/all$Area*12*365)~all$percentEvap+all$meanDepth))
 
-png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig3_dicLoad_RespRate.png',width = 7,
+png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig3_dicLoad_RespRate.png',width = 7,
     height=7,units = 'in',res = 300)
 par(mar=c(6,6,5,2))
 cex.axis=2.5
@@ -405,7 +405,7 @@ axis(1,at = c(log10(0.10),log10(1),log10(10),log10(100),log10(1000),log10(10000)
 abline(0,1,lty=2,lwd=2)
 dev.off()
 
-png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig3_dictoResp_fracEvap.png',width = 7,
+png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig3_dictoResp_fracEvap.png',width = 7,
     height=7,units = 'in',res = 300)
 par(mar=c(6,6,5,2))
 cex.axis=2.5
@@ -418,7 +418,7 @@ axis(2,at = c(log10(0.10),log10(1),log10(10),log10(100),log10(1000),log10(10000)
 abline(h=log10(1),lty=2,lwd=2)
 dev.off()
 
-png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig3_dictoResp_emit.png',width = 7,
+png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig3_dictoResp_emit.png',width = 7,
     height=7,units = 'in',res = 300)
 par(mar=c(6,6,5,2))
 cex.axis=2.5
@@ -436,7 +436,7 @@ legend('topleft',legend = c('Heterotrophic','Autotrophic'),
        col=c('grey 40','green'),bty = 'n',pch = 19,cex = 1.5,pt.cex = 2)
 dev.off()
 
-png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig3_dictoResp_emitTotal.png',width = 7,
+png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig3_dictoResp_emitTotal.png',width = 7,
     height=7,units = 'in',res = 300)
 par(mar=c(6,6,5,2))
 cex.axis=2.5
@@ -452,7 +452,7 @@ points(log10(all$Emit[sum$NEP>0]*12*365),log10(all$dicLoadvResp[sum$NEP>0]),col=
        pch=16)
 dev.off()
 
-png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig3_dictoResp_Area.png',width = 7,
+png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig3_dictoResp_Area.png',width = 7,
     height=7,units = 'in',res = 300)
 par(mar=c(6,6,5,2))
 cex.axis=2.5
@@ -469,7 +469,7 @@ points(log10(all$Area[sum$NEP>0]),log10(all$dicLoadvResp[sum$NEP>0]),col='green'
 dev.off()
 
 windows()
-png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig5_Burial_HRT.png',width = 7,
+png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig5_Burial_HRT.png',width = 7,
     height=7,units = 'in',res = 300)
 par(mar=c(6,6,5,2))
 cex.axis=2.5
@@ -482,7 +482,7 @@ axis(2,at = c(log10(0.10),log10(1),log10(10),log10(100),log10(1000)),labels = c(
 axis(1,at = c(log10(0.10),log10(1),log10(10),log10(100),log10(1000)),labels = c(0.1,1,10,100,1000),cex.axis=cex.axis)
 dev.off()
 
-png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig5_Burial_TP.png',width = 7,
+png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig5_Burial_TP.png',width = 7,
     height=7,units = 'in',res = 300)
 par(mar=c(6,6,5,2))
 cex.axis=2.5
@@ -497,7 +497,7 @@ dev.off()
 
 
 windows()
-png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig6_Emit_Area.png',width = 7,
+png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig6_Emit_Area.png',width = 7,
     height=7,units = 'in',res = 300)
 par(mar=c(6,6,5,2))
 cex.axis=2.5
@@ -510,7 +510,7 @@ axis(2,at = c(log10(1),log10(10),log10(100),log10(1000)),labels = c(1,10,100,100
 axis(1,at = c(log10(100),log10(10000),log10(1000000)),labels = c(100,10000,1000000),cex.axis=cex.axis)
 dev.off()
 
-png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig6_Burial_Area.png',width = 7,
+png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig6_Burial_Area.png',width = 7,
     height=7,units = 'in',res = 300)
 par(mar=c(6,6,5,2))
 cex.axis=2.5
@@ -523,7 +523,7 @@ axis(2,at = c(log10(1),log10(10),log10(100),log10(1000)),labels = c(1,10,100,100
 axis(1,at = c(log10(100),log10(10000),log10(1000000)),labels = c(100,10000,1000000),cex.axis=cex.axis)
 dev.off()
 
-png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig6_WALA_Area.png',width = 7,
+png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig6_WALA_Area.png',width = 7,
     height=7,units = 'in',res = 300)
 par(mar=c(6,6,5,2))
 cex.axis=2.5
@@ -536,7 +536,7 @@ axis(2,at = c(log10(1),log10(10),log10(100),log10(1000),log10(10000)),labels = c
 axis(1,at = c(log10(100),log10(10000),log10(1000000)),labels = c(100,10000,1000000),cex.axis=cex.axis)
 dev.off()
 
-png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig6_HRT_Area.png',width = 7,
+png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig6_HRT_Area.png',width = 7,
     height=7,units = 'in',res = 300)
 par(mar=c(6,6,5,2))
 cex.axis=2.5
@@ -549,7 +549,7 @@ heatscatter(log10(all$Area),all$HRT/365,pch = 19,colpal = col,cex=cex,main='',ce
 axis(1,at = c(log10(100),log10(10000),log10(1000000)),labels = c(100,10000,1000000),cex.axis=cex.axis)
 dev.off()
 
-png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig6_FracEvap_Area.png',width = 7,
+png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig6_FracEvap_Area.png',width = 7,
     height=7,units = 'in',res = 300)
 par(mar=c(6,6,5,2))
 cex.axis=2.5
@@ -562,7 +562,7 @@ heatscatter(log10(all$Area),all$percentEvap,pch = 19,colpal = col,cex=cex,main='
 axis(1,at = c(log10(100),log10(10000),log10(1000000)),labels = c(100,10000,1000000),cex.axis=cex.axis)
 dev.off()
 
-png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig6_d_Area.png',width = 7,
+png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig6_d_Area.png',width = 7,
     height=7,units = 'in',res = 300)
 par(mar=c(6,6,5,2))
 cex.axis=2.5
@@ -669,7 +669,7 @@ boxplot(all$Emit/all$Area~all$lakeSizeBins)
 anova(lm(all$k~all$lakeSizeBins))
 
 
-png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/fig8_fracEmitBury_fracLakes.png',width = 14,height = 7,res=300,units='in')
+png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/fig8_fracEmitBury_fracLakes.png',width = 14,height = 7,res=300,units='in')
 par(mar=c(6,6,5,2),mfrow=c(1,2))
 cex.axis=2.5
 cex.lab=2.5
@@ -792,13 +792,13 @@ summary(sum$Emit[sum$Area<10000]/sum$Area[sum$Area<10000]*12*1000)
 windows()
 plot(log10(sum$WALA)~log10(sum$Area))
 
-hanson<-read.csv('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Validation Data/NHLD Random Sampling/random_lake_survey_measured_parameters.csv',
+hanson<-read.csv('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Validation Data/NHLD Random Sampling/random_lake_survey_measured_parameters.csv',
                  stringsAsFactor=F)
-hansonLoc<-read.csv('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Validation Data/NHLD Random Sampling/random_lake_survey_lakes.csv',
+hansonLoc<-read.csv('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Validation Data/NHLD Random Sampling/random_lake_survey_lakes.csv',
                     stringsAsFactor=F)
 hanson<-merge(hanson,hansonLoc,by='wbic',all.x=T)
 # hanson<-hanson[hanson$doc>1&hanson$area>10000,] # keeping only greater than 1 ha for now
-wbic_perm=readShapeSpatial('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/GIS/NHLD_Lakes_NHD_WBIC_Join.shp')
+wbic_perm=readShapeSpatial('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/GIS/NHLD_Lakes_NHD_WBIC_Join.shp')
 wbic_perm=data.frame(wbic_perm)
 wbic_perm=wbic_perm[,c('Permanent_','WATERBODY_')]
 colnames(wbic_perm)[2]='wbic'
@@ -830,7 +830,7 @@ summary((sum$DOCr_epi+sum$DOCl_epi)/sum$Vepi*12)
 summary((sum$DOCr_epi+sum$DOCl_epi+sum$DOCl_hypo+sum$DOCr_hypo)/(sum$Vepi+sum$Vhypo)*12)
 
 # cumulative fraction 
-png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/hanson_doc_cumFreq.png',
+png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/hanson_doc_cumFreq.png',
     width = 7,height = 7,res = 300,units = 'in')
 par(mar=c(6,6,5,2))
 cex.axis=2.5
@@ -853,13 +853,13 @@ tempSum$Area=cumsum(tempSum$Area)
 plot(hanson$i[hanson$doc>0]~hanson$doc[hanson$doc>0],type='l',lwd=lwd,xlab='DOC mg L-1',cex.lab=cex.lab,
      cex.axis=cex.axis,ylab='Cumulaive Fraction',col='grey60')
 lines(sum$i~sum$doc_conc,lwd=8)
-lines(temp$area~temp$doc,lwd=8,lty=3,col='grey60')
-lines(tempSum$Area~tempSum$doc_conc,lwd=8,lty=3)
+# lines(temp$area~temp$doc,lwd=8,lty=3,col='grey60')
+# lines(tempSum$Area~tempSum$doc_conc,lwd=8,lty=3)
 # axis(1,at=c(log10(5),log10(10),log10(30),log10(100)),labels=c(5,10,30,100),cex.axis=2)
-legend('topleft',legend = c('Modeled','Random Sampling'),fill = c('black','grey60'),bty='n',cex = 1.5)
+legend('bottomright',legend = c('Modeled','Random Sampling'),fill = c('black','grey60'),bty='n',cex = 1.5)
 dev.off()
 
-png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/hanson_doc_1to1.png',
+png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/hanson_doc_1to1.png',
     width = 7,height = 7,res = 300,units = 'in')
 temp=merge(hanson,sum,by='Permanent_',all.x=T)
 par(bty='l',mar=c(5,6,5,5))
@@ -895,7 +895,7 @@ summary(sum$doc_conc)
 
 windows()
 hist((sum$DIC_epi)/sum$Vepi*12)
-png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/hanson_dic_cumFreq.png',
+png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/hanson_dic_cumFreq.png',
     width = 7,height = 7,res = 300,units = 'in')
 par(mar=c(6,6,5,2))
 cex.axis=2.5
@@ -915,7 +915,7 @@ lines(sum$i~sum$dic_conc,lwd=8)
 legend(x = 11,y = .85,legend = c('Modeled','Random Sampling'),fill = c('black','grey60'),bty='n',cex = 1.5)
 dev.off()
 
-png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/hanson_dic_1to1.png',
+png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/hanson_dic_1to1.png',
     width = 7,height = 7,res = 300,units = 'in')
 par(bty='l',mar=c(5,6,5,5))
 temp=merge(hanson,sum,by='Permanent_',all.x=T)
@@ -983,7 +983,7 @@ summary(hanson$totpf)
 
 windows()
 hist((sum$P_epi+sum$phyto/95)/sum$Vepi*31*1000)
-png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/hanson_tp_cumFreq.png',
+png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/hanson_tp_cumFreq.png',
     width = 7,height = 7,res = 300,units = 'in')
 par(mar=c(6,6,5,2))
 cex.axis=2.5
@@ -1003,7 +1003,7 @@ sum$i<-sum$i/length(sum$SWin)
 lines(sum$i~sum$p_conc,lwd=8)
 dev.off()
 
-png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/hanson_tp_1to1.png',
+png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/hanson_tp_1to1.png',
     width = 7,height = 7,res = 300,units = 'in')
 par(bty='l',mar=c(5,6,5,5))
 temp=merge(hanson,sum,by='Permanent_',all.x=T)
@@ -1017,7 +1017,7 @@ summary(sum$p_conc)
 summary(hanson$totpuf[hanson$totpuf>0])
 
 windows()
-png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/hanson_alk_cumFreq.png',
+png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/hanson_alk_cumFreq.png',
     width = 7,height = 7,res = 300,units = 'in')
 par(mar=c(6,6,5,2))
 cex.axis=2.5
@@ -1035,7 +1035,7 @@ sum$i<-sum$i/length(sum$SWin)
 lines(sum$i~sum$alk,lwd=8)
 dev.off()
 
-png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/hanson_alk_1to1.png',
+png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/hanson_alk_1to1.png',
     width = 7,height = 7,res = 300,units = 'in')
 par(bty='l',mar=c(5,6,5,5))
 temp=merge(hanson,sum,by='Permanent_',all.x=T)
@@ -1084,7 +1084,7 @@ hanson$i<-seq(1,length(hanson$wbic),1)/length(hanson$wbic)
 plot(hanson$i~log10(hanson$watershed_area),type='l',lwd=8,xlab='WA (m2)',xaxt='n',cex.lab=1.5,
      cex.axis=2,ylab='Cumulaive Fraction',col='grey60')
 axis(1,at=c(log10(1e4),log10(1e6),log10(1e8)),labels=c(1e4,1e6,1e8),cex.axis=2)
-watersheds<-read.table('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Data/C model forcing data/NHLDsheds_20170323.txt',
+watersheds<-read.table('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Data/C model forcing data/NHLDsheds_20170323.txt',
                        stringsAsFactors = F,header=T,sep = '\t')
 area=sum[,c('Permanent_','Area')]
 watersheds<-merge(watersheds,area,all.y = T)
@@ -1103,7 +1103,7 @@ hanson$i<-seq(1,length(hanson$wbic),1)/length(hanson$wbic)
 plot(hanson$i~log10(hanson$area),type='l',lwd=8,xlab='LA (m2)',xaxt='n',cex.lab=1.5,
      cex.axis=2,ylab='Cumulaive Fraction',col='grey60')
 axis(1,at=c(log10(1e4),log10(1e6),log10(1e8)),labels=c(1e4,1e6,1e8),cex.axis=2)
-watersheds<-read.table('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Data/C model forcing data/NHLDsheds_20170323.txt',
+watersheds<-read.table('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Data/C model forcing data/NHLDsheds_20170323.txt',
                        stringsAsFactors = F,header=T,sep = '\t')
 area=sum[,c('Permanent_','Area')]
 watersheds<-merge(watersheds,area,all.y = T)
@@ -1121,7 +1121,7 @@ hanson$i<-seq(1,length(hanson$wbic),1)/length(hanson$wbic)
 plot(hanson$i~log10(hanson$watershed_area/hanson$area),type='l',lwd=8,xlab='WA:LA',cex.lab=1.5,xlim=c(log10(.1),log10(600)),xaxt='n',
      cex.axis=2,ylab='Cumulaive Fraction',col='grey60')
 axis(1,at=c(log10(1),log10(10),log10(100)),labels=c(1,10,100),cex.axis=2)
-watersheds<-read.table('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Data/C model forcing data/NHLDsheds_20170323.txt',
+watersheds<-read.table('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Data/C model forcing data/NHLDsheds_20170323.txt',
                        stringsAsFactors = F,header=T,sep = '\t')
 area=sum[,c('Permanent_','Area')]
 watersheds<-merge(watersheds,area,all.y = T)
@@ -1188,11 +1188,11 @@ summary(sum$Area)
 
 
 # LTER NTL validation chem data 
-ntl<-read.csv('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Validation Data/NTL LTER Chemistry/chemical_limnology_of_north_temperate_lakes_lter_primary_study_lakes__nutrients_ph_and_carbon.csv',
+ntl<-read.csv('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Validation Data/NTL LTER Chemistry/chemical_limnology_of_north_temperate_lakes_lter_primary_study_lakes__nutrients_ph_and_carbon.csv',
               stringsAsFactors = F)
-ntlChl<-read.csv('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Validation Data/NTL LTER Chl/north_temperate_lakes_lter__chlorophyll_-_trout_lake_area.csv',
+ntlChl<-read.csv('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Validation Data/NTL LTER Chl/north_temperate_lakes_lter__chlorophyll_-_trout_lake_area.csv',
                  stringsAsFactors = F)
-ntlTemp<-read.csv('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Validation Data/physical_limnology_of_the_north_temperate_lakes_primary_study_lakes.csv',
+ntlTemp<-read.csv('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Validation Data/physical_limnology_of_the_north_temperate_lakes_primary_study_lakes.csv',
                   stringsAsFactors = F)
 ntlLookUp<-data.frame(lakeID=c('AL','BM','CR','SP','TR','TB','CB'),Permanent_=c(69886156,69886284,69886510,69886444,69886228,69886158,123148117))
 ntl<-ntl[ntl$lakeid%in%ntlLookUp$lakeID,]
@@ -1202,19 +1202,19 @@ ntlChl$sampledate<-as.POSIXct(ntlChl$sampledate, format='%Y-%m-%d')
 ntlTemp<-ntlTemp[ntlTemp$lakeid%in%ntlLookUp$lakeID,]
 ntlTemp$sampledate<-as.POSIXct(ntlTemp$sampledate, format='%Y-%m-%d')
 ntlTemp<-ntlTemp[sort.list(ntlTemp$sampledate),]
-
-dir<-'D:/Jake/My Papers/NHLD Carbon Model/Results/20170818/'
-skip=6*365 # days to skip 
-for(i in 1:length(ntlLookUp$lakeID)){
-    if(ntlLookUp$lakeID[i]=='CB'){
-      cur<-read.table(file.path(dir,paste(ntlLookUp$Permanent_[i],'_C_model.txt',sep='')),header=T,sep='\t')
-    }else{
-      cur<-read.table(file.path(dir,paste(ntlLookUp$Permanent_[i],'_CRWA_V_adj_C_model.txt',sep='')),
-                      header=T,sep='\t')
-    }
-    cur<-cur[skip:nrow(cur),]
-    assign(paste(as.character(ntlLookUp$lakeID[i]),'Cout',sep=''),cur)
-}
+# 
+# dir<-'D:/Jake/My Papers/NHLD Carbon Model/Results/20170818/'
+# skip=6*365 # days to skip 
+# for(i in 1:length(ntlLookUp$lakeID)){
+#     if(ntlLookUp$lakeID[i]=='CB'){
+#       cur<-read.table(file.path(dir,paste(ntlLookUp$Permanent_[i],'_C_model.txt',sep='')),header=T,sep='\t')
+#     }else{
+#       cur<-read.table(file.path(dir,paste(ntlLookUp$Permanent_[i],'_CRWA_V_adj_C_model.txt',sep='')),
+#                       header=T,sep='\t')
+#     }
+#     cur<-cur[skip:nrow(cur),]
+#     assign(paste(as.character(ntlLookUp$lakeID[i]),'Cout',sep=''),cur)
+# }
 
 
 ###################################
@@ -1223,7 +1223,7 @@ ntlMod_Obs=data.frame(lakeID=rep(NA,7),DOC_mod=rep(NA,7),DOC_obs=rep(NA,7),DOC_c
                       DIC_obs=rep(NA,7),DIC_cor=rep(NA,7),Chl_mod=rep(NA,7),Chl_obs=rep(NA,7),Chl_cor=rep(NA,7),Wtr_mod=rep(NA,7),Wtr_obs=rep(NA,7),Wtr_cor=rep(NA,7))
 # TR ****************************************************
 # windows()
-png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/NTL_validation_all.png',
+png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/NTL_validation_all.png',
     width=21,height = 21,res=300,units='in')
 xlim=c(as.POSIXct('1987-01-01 00:00:00'),max(as.POSIXct(TRCout$datetime)))
 ylim=c(2,7)
@@ -1440,7 +1440,7 @@ ntlMod_Obs$Wtr_cor[1]=cor(temp$wtr[temp$month%in%tempntl$month],tempntl$wtr)
 
 # CR ****************************************************
 # windows()
-# png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/CR_validation.png',width=49,height = 7,res=300,units='in')
+# png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/CR_validation.png',width=49,height = 7,res=300,units='in')
 # xlim=c(as.POSIXct('1987-01-01 00:00:00'),max(as.POSIXct(CRCout$datetime)))
 ylim=c(0,10)
 # par(mfrow=c(1,7),mar=c(5,6,2,2))
@@ -1649,7 +1649,7 @@ ntlMod_Obs$Wtr_cor[2]=cor(temp$wtr[temp$month%in%tempntl$month],tempntl$wtr)
 
 # CB ****************************************************
 # windows()
-# png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/CB_validation.png',width=49,height = 7,res=300,units='in')
+# png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/CB_validation.png',width=49,height = 7,res=300,units='in')
 # xlim=c(as.POSIXct('1987-01-01 00:00:00'),max(as.POSIXct(CBCout$datetime)))
 ylim=c(2,30)
 # par(mfrow=c(1,7),mar=c(5,6,2,2))
@@ -1857,7 +1857,7 @@ ntlMod_Obs$Wtr_cor[3]=cor(temp$wtr[temp$month%in%tempntl$month],tempntl$wtr)
 
 # BM ****************************************************
 # windows()
-# png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/BM_validation.png',width=49,height = 7,res=300,units='in')
+# png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/BM_validation.png',width=49,height = 7,res=300,units='in')
 # xlim=c(as.POSIXct('1987-01-01 00:00:00'),max(as.POSIXct(BMCout$datetime)))
 ylim=c(2,30)
 # par(mfrow=c(1,7),mar=c(5,6,2,2))
@@ -2066,7 +2066,7 @@ ntlMod_Obs$Wtr_cor[4]=cor(temp$wtr[temp$month%in%tempntl$month],tempntl$wtr)
 
 # SP ****************************************************
 # windows()
-# png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/SP_validation.png',width=49,height = 7,res=300,units='in')
+# png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/SP_validation.png',width=49,height = 7,res=300,units='in')
 # xlim=c(as.POSIXct('1987-01-01 00:00:00'),max(as.POSIXct(SPCout$datetime)))
 ylim=c(0,10)
 # par(mfrow=c(1,7),mar=c(5,6,2,2))
@@ -2274,7 +2274,7 @@ ntlMod_Obs$Wtr_cor[5]=cor(temp$wtr[temp$month%in%tempntl$month],tempntl$wtr)
 
 # AL ****************************************************
 # windows()
-# png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/AL_validation.png',width=49,height = 7,res=300,units='in')
+# png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/AL_validation.png',width=49,height = 7,res=300,units='in')
 # xlim=c(as.POSIXct('1987-01-01 00:00:00'),max(as.POSIXct(ALCout$datetime)))
 ylim=c(2,30)
 # par(mfrow=c(1,7),mar=c(5,6,2,2))
@@ -2482,7 +2482,7 @@ ntlMod_Obs$Wtr_cor[6]=cor(temp$wtr[temp$month%in%tempntl$month],tempntl$wtr)
 
 # TB ****************************************************
 # windows()
-# png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/TB_validation.png',width=49,height = 7,res=300,units='in')
+# png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/TB_validation.png',width=49,height = 7,res=300,units='in')
 # xlim=c(as.POSIXct('1987-01-01 00:00:00'),max(as.POSIXct(TBCout$datetime)))
 ylim=c(2,30)
 # par(mfrow=c(1,7),mar=c(5,6,2,2))
@@ -2930,7 +2930,7 @@ allFlux=c(ndAnnualEmit,ndAnnualBurial,ndOpenIceEmit,ndOpenIceBurial,coleEmit,col
           coleBuryRes,raymondEmit)
 
 windows()
-png('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/fig7_annualEmit_burial.png',
+png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/fig7_annualEmit_burial.png',
     width = 7,height = 7,units='in',res = 300)
 bp.at=c(0,0,1,0,1,0,1,0,1)
 par(mar=c(6,6,5,4))
