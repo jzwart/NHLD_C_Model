@@ -417,6 +417,7 @@ heatscatter(all$percentEvap,log10(all$dicLoadvResp),pch = 19,colpal = col,cex=ce
 axis(2,at = c(log10(0.10),log10(1),log10(10),log10(100),log10(1000),log10(10000)),labels = c(0.1,1,10,100,1000,10000),cex.axis=cex.axis)
 abline(h=log10(1),lty=2,lwd=2)
 dev.off()
+summary(all$dicLoadvResp)
 
 png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig3_dictoResp_emit.png',width = 7,
     height=7,units = 'in',res = 300)
@@ -535,6 +536,7 @@ heatscatter(log10(all$Area),log10(all$WALA),pch = 19,colpal = col,cex=cex,main='
 axis(2,at = c(log10(1),log10(10),log10(100),log10(1000),log10(10000)),labels = c(1,10,100,1000,10000),cex.axis=cex.axis)
 axis(1,at = c(log10(100),log10(10000),log10(1000000)),labels = c(100,10000,1000000),cex.axis=cex.axis)
 dev.off()
+summary(lm(log10(all$WALA)~log10(all$Area)))
 
 png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig6_HRT_Area.png',width = 7,
     height=7,units = 'in',res = 300)
@@ -548,6 +550,8 @@ heatscatter(log10(all$Area),all$HRT/365,pch = 19,colpal = col,cex=cex,main='',ce
 # axis(2,at = c(log10(1),log10(10),log10(100),log10(1000),log10(10000)),labels = c(1,10,100,1000,10000),cex.axis=cex.axis)
 axis(1,at = c(log10(100),log10(10000),log10(1000000)),labels = c(100,10000,1000000),cex.axis=cex.axis)
 dev.off()
+summary(lm(all$HRT~log10(all$Area)))
+summary(lm(all$waterIn/all$Area~log10(all$Area)))
 
 png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig6_FracEvap_Area.png',width = 7,
     height=7,units = 'in',res = 300)
@@ -561,6 +565,7 @@ heatscatter(log10(all$Area),all$percentEvap,pch = 19,colpal = col,cex=cex,main='
 # axis(2,at = c(log10(1),log10(10),log10(100),log10(1000),log10(10000)),labels = c(1,10,100,1000,10000),cex.axis=cex.axis)
 axis(1,at = c(log10(100),log10(10000),log10(1000000)),labels = c(100,10000,1000000),cex.axis=cex.axis)
 dev.off()
+summary(lm(all$percentEvap~log10(all$Area)))
 
 png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/Fig6_d_Area.png',width = 7,
     height=7,units = 'in',res = 300)
@@ -605,6 +610,10 @@ summary(all$FracRet~all$lakeSizeBins)
 summary(all$HRT~all$lakeSizeBins)
 
 summary(sum$emergent_d_epi~sum$lakeSizeBins)
+
+summary(all$emergent_d20)
+
+summary(all$emergent_d_all)
 
 sum(sum$k*sum$Area)/sum(sum$Area)
 
@@ -685,6 +694,7 @@ v=0.1
 h=temp$i[min(which(temp$EmitFrac>v))] # fraction of lakes for which 90% of emissions are accounted for  
 abline(h=h,lty=2,lwd=3)
 abline(v=v,lty=2,lwd=3)
+print(1-h)
 
 temp=all[sort.list(all$Burial_phyto+all$Burial_tPOC),]
 temp$i=seq(1,nrow(temp),1)/nrow(temp)
@@ -695,7 +705,10 @@ v=0.1
 h=temp$i[min(which(temp$BuryFrac>v))] # fraction of lakes for which 90% of emissions are accounted for  
 abline(h=h,lty=2,lwd=3)
 abline(v=v,lty=2,lwd=3)
+print(1-h)
 dev.off() 
+
+
 
 temp=all[sort.list(all$Burial_phyto+all$Burial_tPOC),]
 temp$i=seq(1,nrow(temp),1)/nrow(temp)
@@ -727,6 +740,7 @@ plot(log10(all$dicLoadvResp)~log10(all$Emit))
 
 boxplot(sum$fracCO2~sum$lakeSizeBins,outline=T)
 
+# contribution of DIC production via DIC loaded, DOC respired, sediment respiration 
 all$totalDICcontributed=all$DOC_Respired+all$sed_resp+all$DIC_load
 sum(all$DOC_Respired)/sum(all$totalDICcontributed)
 sum(all$DIC_load)/sum(all$totalDICcontributed)
@@ -745,6 +759,9 @@ sum$DOC_Respired_Epi=sum$emergent_d_epi*(sum$DOCr_epi+sum$DOCl_epi)
 sum$NEP=sum$GPP*sum$Vepi*.15-sum$DOC_Respired_Epi
 
 sum[sum$NEP>0,]
+length(sum[sum$NEP<0,1])/length(sum[,1]) # fraction of lakes that are net heterotrophic during summer 
+
+sum(sum$Emit[sum$NEP>0])/sum(sum$Emit)# contribution of net autotrophic lakes to total NHLD CO2 emissions 
 
 summary(all$Emit[sum$NEP>0]/all$Area[sum$NEP>0]*12*365) # g C m-2 yr-1 (summertime rates) 
 summary(all$Emit[sum$NEP<0]/all$Area[sum$NEP<0]*12*365) # g C m-2 yr-1 (summertime rates) 
@@ -2800,8 +2817,12 @@ summary(sum$HRT)
 ndNHLDemitlowHRT=sum(sum$Emit[sum$HRT<545]*12*365) # 545 days is median 
 ndNHLDemitlongHRT=sum(sum$Emit[sum$HRT>545]*12*365)
 
-ndNHLDemitlowPercE=sum(sum$Emit[sum$percentEvap<.705]*12*365) # 0.705 is median 
-ndNHLDemithighPercE=sum(sum$Emit[sum$percentEvap>.705]*12*365)
+medFracEvap=summary(all$percentEvap)[3]
+
+sum(sum$Emit[sum$percentEvap<medFracEvap])/sum(sum$Emit)
+
+ndNHLDemitlowPercE=sum(sum$Emit[sum$percentEvap<medFracEvap]*12*365) # 0.705 is median 
+ndNHLDemithighPercE=sum(sum$Emit[sum$percentEvap>medFracEvap]*12*365)
 
 ndNHLDemitlowHRT/ndNHLDemit
 ndNHLDemitlongHRT/ndNHLDemit
