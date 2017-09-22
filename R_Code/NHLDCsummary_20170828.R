@@ -653,6 +653,8 @@ sum(all$percentEvap*all$Area)/sum(all$Area)
 
 anova(lm(all$dicLoadvResp~all$lakeSizeBins))
 
+length(all[all$dicLoadvResp<1,1])/nrow(all)
+
 anova(lm(all$HRT~all$lakeSizeBins))
 summary(lm(all$HRT~log10(all$Area)))
 
