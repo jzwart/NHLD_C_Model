@@ -11,9 +11,9 @@
 rm(list=ls())
 
 ########## load utility functions and packages
-source('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/R Code/NHLD_LakeCarbonModel_supporting_V13_discrete.R')
-source('/Users/Jake/Desktop/R functions/AveLightClimate.R')
-source('/Users/Jake/Desktop/R functions/DOY.r')
+source('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/R Code/NHLD_LakeCarbonModel_supporting_V13_discrete.R')
+source('/Users/Jzwart/lakeScale/50_lake_biogeochem_model/src/AveLightClimate.R')
+source('/Users/jzwart/lakeScale/50_lake_biogeochem_model/src/DOY.r')
 require(deSolve)
 require(LakeMetabolizer)
 require(snow)
@@ -27,7 +27,7 @@ require(AquaEnv)
 require(marelac)
 
 # *************************** NEED TO CHANGE DIRECTORIES ONCE RUNNING ON CRC ****************************
-dir<-'D:/Jake/My Papers/NHLD Carbon Model/20170815/'
+dir<-'E:/Jake/My Papers/NHLD Carbon Model/20170815/'
 
 # flux directory (from VIC); don't need 
 # fluxDir<-file.path(dir,)
@@ -40,7 +40,7 @@ lakeGeomorphDir<-file.path(dir,'OUT_RESULTS_TroutWatershed_Modified')
 # daily lake initial conditions directory 
 lakeInitGeomorphDir<-file.path(dir,'OUT_RESULTS_TroutWatershed_Modified')
 # lake watershed information 
-lakeShedDir<-'/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Data/C model forcing data/'
+lakeShedDir<-'/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Data/C model forcing data/'
 watersheds<-read.table(file.path(lakeShedDir,"NHLDsheds_20170323.txt"),header=TRUE,sep="\t",stringsAsFactors=FALSE)
 watersheds$percentWetland<-watersheds$percentWetland*100
 # lake location, area, and perimeter 
@@ -49,7 +49,7 @@ lakeLocation<-data.frame(lakeLocation)
 lakeLocation$Permanent_<-as.character(lakeLocation$Permanent_)
     
 # keeling curve for historic CO2 concentrations 
-keeling<-read.table('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Data/keelingCurve.txt',sep=' ',header = F,stringsAsFactors = F)
+keeling<-read.table('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Data/keelingCurve.txt',sep=' ',header = F,stringsAsFactors = F)
 colnames(keeling)<-c('site_code','year','month','day','hour','minute','second','co2','value_unc','nvalue','latitude','longitude','altitude','elevation','intake_height','instrument','qcflag')
 keeling$datetime<-as.Date(paste(keeling$year,keeling$month,keeling$day),format='%Y %m %d')
 keeling$co2<-ifelse(keeling$co2==-999.99,NA,keeling$co2)
@@ -140,7 +140,7 @@ leafLoad=300/12 #mol C m-1 shoreline yr-1; autumn leaf fall; check out Likens 19
 
 length(lakes)
 ntlLookUp<-data.frame(lakeID=c('AL','BM','CR','SP','TR','TB','CB'),Permanent_=c(69886156,69886284,69886510,69886444,69886228,69886158,123148117))
-lake='SP'
+lake='TB'
 i=grep(ntlLookUp$Permanent_[ntlLookUp$lakeID==lake],lakes) # Big Musky = 69886284, Sparkling = 69886444, Allequash = , Trout = , Crystal = , Crystal Bog = , Trout Bog = 
 date<-read.table(file.path(dir,'Date_OUT_ALL.txt'),stringsAsFactors = F,header = F,sep='\t')
 datetime<-as.Date(paste(date$V1,date$V2,date$V3),format = '%Y %m %d')
@@ -217,6 +217,10 @@ datetime<-as.Date(paste(date$V1,date$V2,date$V3),format = '%Y %m %d')
   # calculate concentrations of DIC, DOC, TP based on landcover
   # could use Frost et al 2005 for stream DOC; and Johnston et al 2008 ; Jutras etal 2011 
   # could use Frost et al 2009 for stream C:P of seston 
+  if(lake=='TB'){
+    curWatershed$percentWetland=80 #sensativity to inflowing DOC concentration; we think we estimate a low inflowing doc concentration for TB; 80% is based on Hope et al. (1996)
+  }
+  
   streamDOC=exp(1.3961+3.245*(curWatershed$percentWetland/100))/12*1000/1000	# from lottig 2012; mol m-3
   streamPOC=3/12*1000/1000		# ~3 mg L-1; buffam 2011; mol m-3
   streamDIC=10.85/12*1000/1000		#10 mg L-1; lottig 2011; mol m-3
@@ -306,9 +310,9 @@ datetime<-as.Date(paste(date$V1,date$V2,date$V3),format = '%Y %m %d')
   # reducing snow depth because it's really high as of 2017-04-07
   # curLakeHydro$snowDepth_m=curLakeHydro$snowDepth_m*0.3
   
-  outDir<-'D:/Jake/My Papers/NHLD Carbon Model/Results/20170818/'
+  outDir<-'E:/Jake/My Papers/NHLD Carbon Model/Results/20170818/'
 
-  source('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/R Code/NHLD_LakeCarbonModel_supporting_V13_discrete.R')
+  # source('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/R Code/NHLD_LakeCarbonModel_supporting_V13_discrete.R')
   
   out<-matrix(NA,nrow=length(t),ncol=length(X))
   #initiallizing states 
@@ -325,7 +329,7 @@ datetime<-as.Date(paste(date$V1,date$V2,date$V3),format = '%Y %m %d')
   curLakeHydro$time<-t
   out<-merge(curLakeHydro,out,by='time',all.y=T)
   
-  write.table(out,file.path(outDir,paste(lakes[i],"CRWA_V_adj_C_model.txt",sep="_")),row.names=FALSE,sep="\t",quote=F)
+  # write.table(out,file.path(outDir,paste(lakes[i],"CRWA_V_adj_C_model.txt",sep="_")),row.names=FALSE,sep="\t",quote=F)
 # }
 
 windows()
@@ -433,11 +437,11 @@ mean((out$DOCr_epi+out$DOCl_epi)/out$Vepi*12,na.rm = T)
 
 
 # LTER NTL validation chem data 
-ntl<-read.csv('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Validation Data/NTL LTER Chemistry/chemical_limnology_of_north_temperate_lakes_lter_primary_study_lakes__nutrients_ph_and_carbon.csv',
+ntl<-read.csv('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Validation Data/NTL LTER Chemistry/chemical_limnology_of_north_temperate_lakes_lter_primary_study_lakes__nutrients_ph_and_carbon.csv',
               stringsAsFactors = F)
-ntlChl<-read.csv('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Validation Data/NTL LTER Chl/north_temperate_lakes_lter__chlorophyll_-_trout_lake_area.csv',
+ntlChl<-read.csv('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Validation Data/NTL LTER Chl/north_temperate_lakes_lter__chlorophyll_-_trout_lake_area.csv',
                  stringsAsFactors = F)
-ntlTemp<-read.csv('/Users/Jake/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Validation Data/physical_limnology_of_the_north_temperate_lakes_primary_study_lakes.csv',
+ntlTemp<-read.csv('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Validation Data/physical_limnology_of_the_north_temperate_lakes_primary_study_lakes.csv',
                   stringsAsFactors = F)
 ntl<-ntl[ntl$lakeid%in%ntlLookUp$lakeID,]
 ntl$sampledate<-as.POSIXct(ntl$sampledate,format='%Y-%m-%d')

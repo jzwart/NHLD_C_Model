@@ -647,6 +647,88 @@ summary(all$dicLoadvResp)
 
 summary(all$dicLoadvResp~all$lakeSizeBins)
 
+length(all[all$Area<10000,1]) # n lakes less than 1 ha 
+length(all[all$Area>10000&all$Area<100000,1])
+length(all[all$Area>100000&all$Area<1000000,1])
+length(all[all$Area>1000000&all$Area<10000000,1])
+length(all[all$Area>10000000&all$Area<100000000,1])
+
+# total area by lake sizes 
+sum(all$Area[all$Area<10000])/1000/1000
+sum(all$Area[all$Area>10000&all$Area<100000])/1000/1000
+sum(all$Area[all$Area>100000&all$Area<1000000])/1000/1000
+sum(all$Area[all$Area>1000000&all$Area<10000000])/1000/1000
+sum(all$Area[all$Area>10000000&all$Area<100000000])/1000/1000
+sum(all$Area)/1000/1000
+
+# median k by lake sizes 
+median(sum$k[sum$Area<10000])
+median(sum$k[sum$Area>10000&sum$Area<100000])
+median(sum$k[sum$Area>100000&sum$Area<1000000])
+median(sum$k[sum$Area>1000000&sum$Area<10000000])
+median(sum$k[sum$Area>10000000&sum$Area<100000000])
+median(sum$k)
+sum(sum$k*sum$Area)/sum(sum$Area)
+
+# median open ice pco2 by lake sizes 
+sum$pco2=0.952*sum$fracCO2*sum$DIC_epi/sum$Vepi*1000*29.41
+median(sum$pco2[sum$Area<10000])
+median(sum$pco2[sum$Area>10000&sum$Area<100000])
+median(sum$pco2[sum$Area>100000&sum$Area<1000000])
+median(sum$pco2[sum$Area>1000000&sum$Area<10000000])
+median(sum$pco2[sum$Area>10000000&sum$Area<100000000])
+median(sum$pco2)
+sum(sum$pco2*sum$Area)/sum(sum$Area)
+
+# mean k by lake size 
+summary(sum$k~sum$lakeSizeBins)
+sum(sum$k*sum$Area)/sum(sum$Area)
+
+# mean open ice pco2 by lake size 
+summary(sum$pco2~sum$lakeSizeBins)
+sum(sum$pco2*sum$Area)/sum(sum$Area)
+
+# mean open ice pH by lake size 
+summary(sum$pH~sum$lakeSizeBins)
+sum(sum$pH*sum$Area)/sum(sum$Area)
+
+# mean annual emissions by lake size 
+summary(all$Emit/all$Area*12*365~all$lakeSizeBins)
+sum(all$Emit/all$Area*12*365*all$Area)/sum(all$Area)
+
+# mean open ice emissions by lake size 
+summary(sum$Emit/sum$Area*12*365~sum$lakeSizeBins)
+sum(sum$Emit/sum$Area*12*365*sum$Area)/sum(sum$Area)
+
+# mean annual burial by lake size 
+summary(all$allBurial/all$Area*12*365~all$lakeSizeBins)
+sum(all$allBurial/all$Area*12*365*all$Area)/sum(all$Area)
+
+# mean open ice burial by lake size 
+summary(sum$allBurial/sum$Area*12*365~sum$lakeSizeBins)
+sum(sum$allBurial/sum$Area*12*365*sum$Area)/sum(sum$Area)
+
+# mean frac retained by lake size 
+summary(all$FracRet~all$lakeSizeBins)
+sum(all$FracRet*all$Area)/sum(all$Area)
+
+# mean frac evap by lake size 
+summary(all$percentEvap~all$lakeSizeBins)
+sum(all$percentEvap*all$Area)/sum(all$Area)
+
+# mean hRT by lake size 
+summary(all$HRT~all$lakeSizeBins)
+sum(all$HRT*all$Area)/sum(all$Area)
+
+#  mean open ice turnover rate of doc by lake size 
+summary(sum$emergent_d_epi~sum$lakeSizeBins)
+sum(sum$emergent_d_epi*sum$Area)/sum(sum$Area)
+
+#  mean annual turnover rate of doc by lake size 
+summary(all$emergent_d_epi~all$lakeSizeBins)
+sum(all$emergent_d_epi*all$Area)/sum(all$Area)
+
+
 summary(all$percentEvap~all$lakeSizeBins)
 
 sum(all$percentEvap*all$Area)/sum(all$Area)
@@ -1222,18 +1304,18 @@ ntlTemp<-ntlTemp[ntlTemp$lakeid%in%ntlLookUp$lakeID,]
 ntlTemp$sampledate<-as.POSIXct(ntlTemp$sampledate, format='%Y-%m-%d')
 ntlTemp<-ntlTemp[sort.list(ntlTemp$sampledate),]
 # 
-# dir<-'D:/Jake/My Papers/NHLD Carbon Model/Results/20170818/'
-# skip=6*365 # days to skip 
-# for(i in 1:length(ntlLookUp$lakeID)){
-#     if(ntlLookUp$lakeID[i]=='CB'){
-#       cur<-read.table(file.path(dir,paste(ntlLookUp$Permanent_[i],'_C_model.txt',sep='')),header=T,sep='\t')
-#     }else{
-#       cur<-read.table(file.path(dir,paste(ntlLookUp$Permanent_[i],'_CRWA_V_adj_C_model.txt',sep='')),
-#                       header=T,sep='\t')
-#     }
-#     cur<-cur[skip:nrow(cur),]
-#     assign(paste(as.character(ntlLookUp$lakeID[i]),'Cout',sep=''),cur)
-# }
+dir<-'E:/Jake/My Papers/NHLD Carbon Model/Results/20170818/'
+skip=6*365 # days to skip
+for(i in 1:length(ntlLookUp$lakeID)){
+    if(ntlLookUp$lakeID[i]=='CB'){
+      cur<-read.table(file.path(dir,paste(ntlLookUp$Permanent_[i],'_C_model.txt',sep='')),header=T,sep='\t')
+    }else{
+      cur<-read.table(file.path(dir,paste(ntlLookUp$Permanent_[i],'_CRWA_V_adj_C_model.txt',sep='')),
+                      header=T,sep='\t')
+    }
+    cur<-cur[skip:nrow(cur),]
+    assign(paste(as.character(ntlLookUp$lakeID[i]),'Cout',sep=''),cur)
+}
 
 
 ###################################
@@ -2501,10 +2583,10 @@ ntlMod_Obs$Wtr_cor[6]=cor(temp$wtr[temp$month%in%tempntl$month],tempntl$wtr)
 
 # TB ****************************************************
 # windows()
-# png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/TB_validation.png',width=49,height = 7,res=300,units='in')
+png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/TB_increasedWetland_validation.png',width=14,height = 28,res=300,units='in')
 # xlim=c(as.POSIXct('1987-01-01 00:00:00'),max(as.POSIXct(TBCout$datetime)))
 ylim=c(2,30)
-# par(mfrow=c(1,7),mar=c(5,6,2,2))
+par(mfrow=c(4,2),mar=c(5,6,2,2))
 cex=2
 lwd=2
 cex.axis=2
