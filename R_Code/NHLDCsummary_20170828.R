@@ -5,41 +5,51 @@ library(LSD)
 library(maptools)
 library(Hmisc)
 # 
-# dir<-'D:/Jake/My Papers/NHLD Carbon Model/Results/20170818/'
-# files=list.files(dir)
-# # files=files[780:801]
-# skip=6*365 # days to skip 
-# 
-# sum<-data.frame() # only open ice  
-# all<-data.frame()
-# val<-data.frame()
-# for(i in 1:length(files)){
-#   cur<-read.table(file.path(dir,files[i]),stringsAsFactors = F,sep='\t',header=T)
-#   lake<-strsplit(files[i],'_C_model.txt',fixed = T)[[1]]
-#   cur<-na.omit(cur)
-#   if(length(cur$time)<2){
-#     next
-#   }
-#   curVal=cur[skip:nrow(cur),]
-#   curVal=curVal[curVal$LakeE>0&as.Date(curVal$datetime)>as.Date('2004-01-01')&as.Date(curVal$datetime)<as.Date('2004-12-31'),]
-#   curVal=curVal[,3:ncol(curVal)]
-#   cur<-cur[skip:(nrow(cur)-0),3:ncol(cur)] # skipping first X number of days 
-#   cur<-cur[cur$Vol>0,] # only keeping days when there's actually water 
-#   curSum=cur[cur$LakeE>0,] # only open ice periods
-#  
-#   cur<-data.frame(t(apply(cur,MARGIN = 2,FUN = mean)))
-#   curSum<-data.frame(t(apply(curSum,MARGIN = 2,FUN = mean)))
-#   curVal<-data.frame(t(apply(curVal,MARGIN = 2,FUN=mean)))
-#   cur$Permanent_<-lake
-#   curSum$Permanent_<-lake
-#   curVal$Permanent_<-lake
-#   
-#   sum<-rbind(sum,curSum)
-#   all<-rbind(all,cur)
-#   val<-rbind(val,curVal)
-# }
-# 
-# sum2=sum
+dir<-'E:/Jake/My Papers/NHLD Carbon Modeling/20170609/'
+dir<-'/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Results/C Model Output/20170818/'
+files=list.files(dir)
+files=files[-grep('adj',files)]
+# files=files[780:801]
+skip=6*365 # days to skip
+
+sum<-data.frame() # only open ice
+all<-data.frame()
+val<-data.frame()
+for(i in 1:length(files)){
+  cur<-read.table(file.path(dir,files[i]),stringsAsFactors = F,sep='\t',header=T)
+  lake<-strsplit(files[i],'_C_model.txt',fixed = T)[[1]]
+  cur<-na.omit(cur)
+  if(length(cur$time)<2){
+    next
+  }
+  curVal=cur[skip:nrow(cur),]
+  curVal=curVal[curVal$LakeE>0&as.Date(curVal$datetime)>as.Date('2004-01-01')&as.Date(curVal$datetime)<as.Date('2004-12-31'),]
+  curVal=curVal[,3:ncol(curVal)]
+  
+  # curEmitIceoff<-cur[cur$LakeE>0,]
+  # curEmitIceoff$doy<-date2doy(as.POSIXct(curEmitIceoff$datetime,tz='GMT'))
+  # curEmitIceoff<-aggregate(curEmitIceoff$Emit~curEmitIceoff$doy,FUN=mean)
+  # plot(curEmitIceoff[,2]~curEmitIceoff[,1])
+  # curEmitIceoff$cumsum=cumsum(curEmitIceoff[,2])/sum(curEmitIceoff[,2])
+  # plot(curEmitIceoff$cumsum)
+  
+  cur<-cur[skip:(nrow(cur)-0),3:ncol(cur)] # skipping first X number of days
+  cur<-cur[cur$Vol>0,] # only keeping days when there's actually water
+  curSum=cur[cur$LakeE>0,] # only open ice periods
+  
+  cur<-data.frame(t(apply(cur,MARGIN = 2,FUN = mean)))
+  curSum<-data.frame(t(apply(curSum,MARGIN = 2,FUN = mean)))
+  curVal<-data.frame(t(apply(curVal,MARGIN = 2,FUN=mean)))
+  cur$Permanent_<-lake
+  curSum$Permanent_<-lake
+  curVal$Permanent_<-lake
+
+  sum<-rbind(sum,curSum)
+  all<-rbind(all,cur)
+  val<-rbind(val,curVal)
+}
+
+sum2=sum
 
 # 
 load('/Users/jzwart/NHLD_C_Model/R_Data/LakeCsummary_20170828.RData')
@@ -930,6 +940,347 @@ hist((sum$DOCr_epi+sum$DOCl_epi)/sum$Vepi*12)
 summary((sum$DOCr_epi+sum$DOCl_epi)/sum$Vepi*12)
 summary((sum$DOCr_epi+sum$DOCl_epi+sum$DOCl_hypo+sum$DOCr_hypo)/(sum$Vepi+sum$Vhypo)*12)
 
+# NHD lake classification 
+nhd<-read.csv('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Data/NLA_LakeClass.csv',stringsAsFactor=F)
+nhd2<-read.csv('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Data/NLA_LakeClass2.csv',stringsAsFactor=F)
+nhd<-rbind(nhd,nhd2)
+rm(nhd2)
+head(nhd)
+nhd$Class<-gsub('STLA','ST',nhd$Class)
+nhd$Class<-gsub('HW','SE',nhd$Class)
+
+repFrac_seepVdrain<-c(length(nhd$Class[nhd$Class=='ST'])/length(nhd$Class),length(nhd$Class[nhd$Class=='SE'])/length(nhd$Class),
+                      sum(nhd$AreaSqKm[nhd$Class=='ST'])/sum(nhd$AreaSqKm), sum(nhd$AreaSqKm[nhd$Class=='SE'])/sum(nhd$AreaSqKm),
+                      length(litFracRet$LakeType[litFracRet$LakeType=='Drainage'])/length(litFracRet$LakeType[litFracRet$LakeType%in%c('Drainage','Seepage','UNDERC_Long')]),
+                      1-length(litFracRet$LakeType[litFracRet$LakeType=='Drainage'])/length(litFracRet$LakeType[litFracRet$LakeType%in%c('Drainage','Seepage','UNDERC_Long')]))
+
+# figure 1; fraction DOC mineralized 
+##########
+png('/Users/jzwart/NHLD_C_Model/Figures/Fig1_fracRet_lit.png',width = 14,height = 7,res=300,units='in')
+par(mar=c(6,6,5,2),mfrow=c(1,2))
+cex.axis=2.3
+cex.lab=2.3
+lwd=8
+pch=16
+cex=2.5
+plot(litFracRet$HRT_yrs[litFracRet$LakeType=='Drainage'],
+       litFracRet$C_ret_proportion[litFracRet$LakeType=='Drainage'],pch=19,col='grey80',cex=cex,ylim=c(0,1),cex.axis=cex.axis,cex.lab=cex.lab,
+     xlab='HRT (Years)', ylab='Fraction Retained')
+points(litFracRet$HRT_yrs[litFracRet$LakeType=='Seepage'|litFracRet$LakeType=='UNDERC_Long'],
+       litFracRet$C_ret_proportion[litFracRet$LakeType=='Seepage'|litFracRet$LakeType=='UNDERC_Long'],pch=19,col='black',cex=cex)
+legend('bottomright',legend = c('Drainage','Seepage'),
+       col=c('grey80','black'),bty = 'n',pch = 19,cex = 1.5,pt.cex = 2)
+text(x = 13,y = .95,labels = 'A',cex = cex)
+
+bp.at=c(0,0,1,0,1,0)
+par(mar=c(6,6,5,4))
+barplot(repFrac_seepVdrain,space = bp.at,col=c('gray80','gray20'),border = 'black',lwd=2,cex.axis = 2,cex.lab=2,ylab='Representative Fraction',
+        ylim=c(0,1))
+legend('topleft',legend = c('Drainage','Seepage'),col = c('gray80','black'),bty = 'n',fill = c('gray80','black'),cex=2)
+axis(1,at = c(1,4,7),labels = c(expression(atop(Count)),expression(atop(Area)),expression(atop(Literature))),
+     lwd = 0,lwd.ticks = 0,line = 2.5,cex.axis=2)
+text(x = 8,y = .95,labels = 'B',cex = cex)
+dev.off()
+
+##########
+# figure 3; cumulative fraction plots
+###################
+png('/Users/jzwart/NHLD_C_Model/Figures/Fig3_cumFreq.png',
+    width = 14,height = 14,res = 300,units = 'in')
+par(mar=c(6,6,5,2), fig=c(0,.5,.5,1))
+cex.axis=2.5
+cex.lab=2.3
+cex=2
+lwd=8
+sum$doc_conc<-(sum$DOCr_epi+sum$DOCl_epi+sum$DOCr_hypo+sum$DOCl_hypo)/(sum$Vol)*12
+sum<-sum[sort.list(sum$doc_conc),]
+sum$i<-seq(1,length(sum$SWin),1)
+sum$i<-sum$i/length(sum$SWin)
+hanson<-hanson[sort.list(hanson$doc),]
+hanson$i<-seq(1,length(hanson$wbic),1)/length(hanson$wbic)
+temp=hanson[hanson$doc>0,]
+temp=temp[sort.list(temp$doc),]
+temp$area<-temp$area/sum(temp$area)
+temp$area<-cumsum(temp$area)
+tempSum=sum[sort.list(sum$doc_conc),]
+tempSum$Area=tempSum$Area/sum(tempSum$Area)
+tempSum$Area=cumsum(tempSum$Area)
+plot(hanson$i[hanson$doc>0]~hanson$doc[hanson$doc>0],type='l',lwd=lwd,xlab=expression(DOC~(mg~C~L^-1)),cex.lab=cex.lab,ylim=c(0,1),
+     cex.axis=cex.axis,ylab='Cumulaive Fraction',col='grey60')
+lines(sum$i~sum$doc_conc,lwd=8)
+legend('topleft',legend = c('Modeled','Random Sampling'),fill = c('black','grey60'),bty='n',cex = 1.4)
+text(x = 32,y = .05,labels = 'A',cex = cex)
+temp=merge(hanson,sum,by='Permanent_',all.x=T)
+par(bty='l',mar=c(5,6,5,5), fig=c(.2,.5,.58,.88), new=T)
+cex.axis=1.3
+cex.lab=1.3
+cex=1.2
+lwd=2
+plot(temp$doc[temp$doc>0]~temp$doc_conc[temp$doc>0],pch=16,cex=cex,xlim=c(0,35),ylim=c(0,35),cex.axis=cex.axis,
+     cex.lab=cex.lab,ylab=expression(Observed~(mg~C~L^-1)),xlab=expression(Modeled~(mg~C~L^-1))) # see Canham et al 2004 Fig. 2 
+abline(0,1,lwd=lwd,lty=2)
+text(x = 30,y = 25,labels = '1:1',cex = cex)
+
+# alk 
+par(mar=c(6,6,5,2), bty='o', fig=c(.5,1,.5,1), new=T)
+cex.axis=2.5
+cex.lab=2.3
+cex=2
+lwd=8
+hanson<-hanson[sort.list(hanson$alk),]
+hanson$i<-seq(1,length(hanson$wbic),1)/length(hanson$wbic)
+plot(hanson$i~hanson$alk,type='l',lwd=8,xlab=expression(Alkalinity~(paste(mu,Eq)~L^-1)),cex.lab=cex.lab,xlim=c(-80,1500),ylim=c(0,1),
+     cex.axis=cex.axis,ylab='Cumulaive Fraction',col='grey60')
+# legend(x=600,y=.85,legend = c('Modeled','Random Sampling'),fill = c('black','grey60'),bty='n' ,cex=1.5)
+sum<-sum[sort.list(sum$alk),]
+sum$i<-seq(1,length(sum$SWin),1)
+sum$i<-sum$i/length(sum$SWin)
+lines(sum$i~sum$alk,lwd=8)
+text(x = 1500,y = .05,labels = 'B',cex = cex)
+
+par(bty='l',mar=c(5,6,5,5), fig=c(.7,1,.58,.88), new=T)
+cex.axis=1.3
+cex.lab=1.3
+cex=1.2
+lwd=2
+temp=merge(hanson,sum,by='Permanent_',all.x=T)
+plot(temp$alk.x~temp$alk.y,pch=16,cex=cex,cex.axis=cex.axis,ylim=c(-80,1500),xlim=c(-80,1500),
+     cex.lab=cex.lab,ylab=expression(Observed~(paste(mu,Eq)~L^-1)),xlab=expression(Observed~(paste(mu,Eq)~L^-1)))
+abline(0,1,lwd=lwd,lty=2)
+text(x = 1200,y = 1000,labels = '1:1',cex = cex)
+
+#DIC
+par(mar=c(6,6,5,2), bty='o', fig=c(0,.5,0,.5), new=T)
+cex.axis=2.5
+cex.lab=2.3
+cex=2
+lwd=8
+hanson<-hanson[sort.list(hanson$dic),]
+hanson$i<-seq(1,length(hanson$wbic),1)/length(hanson$wbic)
+plot(hanson$i[hanson$dic>0]~hanson$dic[hanson$dic>0],type='l',lwd=8,xlab=expression(DIC~(mg~C~L^-1)),cex.lab=cex.lab,ylim=c(0,1),
+     cex.axis=cex.axis,ylab='Cumulaive Fraction',col='grey60')
+sum$dic_conc<-sum$DIC_epi/sum$Vepi*12
+sum<-sum[sort.list(sum$dic_conc),]
+sum$i=seq(1,length(sum$Area),1)
+sum$i<-sum$i/length(sum$Permanent_)
+lines(sum$i~sum$dic_conc,lwd=8)
+text(x = 26,y = .05,labels = 'C',cex = cex)
+# axis(1,at=c(log10(1),log10(5),log10(10),log10(30),log10(100)),labels=c(1,5,10,30,100),cex.axis=2)
+# legend(x = 11,y = .85,legend = c('Modeled','Random Sampling'),fill = c('black','grey60'),bty='n',cex = 1.5)
+
+par(bty='l',mar=c(5,6,5,5), fig=c(.2,.5,.08,.38), new=T)
+cex.axis=1.3
+cex.lab=1.3
+cex=1.2
+lwd=2
+temp=merge(hanson,sum,by='Permanent_',all.x=T)
+temp=temp[!is.na(temp$dic_conc[temp$dic>0]),]
+plot(temp$dic[temp$dic>0]~temp$dic_conc[temp$dic>0],pch=16,cex=cex,xlim=c(0,20),ylim=c(0,20),cex.axis=cex.axis,
+     cex.lab=cex.lab,ylab=expression(Observed~(mg~C~L^-1)),xlab=expression(Modeled~(mg~C~L^-1)))
+abline(0,1,lwd=lwd,lty=2)
+text(x = 17,y = 14,labels = '1:1',cex = cex)
+
+#tp 
+par(mar=c(6,6,5,2), bty='o', fig=c(.5,1,0,.5), new=T)
+cex.axis=2.5
+cex.lab=2.3
+cex=2
+lwd=8
+hanson<-hanson[sort.list(hanson$totpuf),]
+hanson$i<-seq(1,length(hanson$wbic),1)/length(hanson$wbic)
+plot(hanson$i[hanson$totpuf>0]~hanson$totpuf[hanson$totpuf>0],type='l',lwd=8,xlab=expression(TP~(paste(mu,g)~L^-1)),cex.lab=cex.lab,xlim=c(0,120),ylim=c(0,1),
+     cex.axis=cex.axis,ylab='Cumulaive Fraction',col='grey60')
+# axis(1,at=c(log10(5),log10(10),log10(30),log10(100)),labels=c(5,10,30,100),cex.axis=2)
+# legend(x=50,y=.85,legend = c('Modeled','Random Sampling'),fill = c('black','grey60'),bty='n' ,cex = 1.5)
+sum$p_conc<-(sum$P_epi+sum$phyto/95)/sum$Vepi*31*1000
+sum<-sum[sort.list(sum$p_conc),]
+sum$i<-seq(1,length(sum$SWin),1)
+sum$i<-sum$i/length(sum$SWin)
+lines(sum$i~sum$p_conc,lwd=8)
+text(x = 120,y = .05,labels = 'D',cex = cex)
+
+par(bty='l',mar=c(5,6,5,5), fig=c(.7,1,.08,.38), new=T)
+cex.axis=1.3
+cex.lab=1.3
+cex=1.2
+lwd=2
+temp=merge(hanson,sum,by='Permanent_',all.x=T)
+plot(temp$totpuf[temp$totpuf>0]~temp$p_conc[temp$totpuf>0],pch=16,cex=cex,xlim=c(0,70),ylim=c(0,70),cex.axis=cex.axis,
+     cex.lab=cex.lab,ylab=expression(Observed~(paste(mu,g)~P~L^-1)),xlab=expression(Modeled~(paste(mu,g)~P~L^-1)))
+abline(0,1,lwd=lwd,lty=2)
+text(x = 60,y = 50,labels = '1:1',cex = cex)
+dev.off()
+
+####################
+# figure 4; hydrologic characteristics as function of lake size
+#####################
+png('/Users/jzwart/NHLD_C_Model/Figures/Fig4_hydro_area.png',width = 21,
+    height=7,units = 'in',res = 300)
+par(mar=c(6,6,5,2), mfrow=c(1,3))
+cex.axis=3
+cex.lab=2.8
+cex=3
+col=colorpalette(c('grey70','black'))
+heatscatter(log10(all$Area),log10(all$WALA),pch = 19,colpal = col,cex=cex,main='',cex.axis=cex.axis,cex.lab=cex.lab,
+            xlab='',ylab='WA:LA',yaxt='n',xaxt='n')
+axis(2,at = c(log10(1),log10(10),log10(100),log10(1000),log10(10000)),labels = c(1,10,100,1000,10000),cex.axis=cex.axis)
+axis(1,at = c(log10(100),log10(10000),log10(1000000)),labels = c(100,10000,1000000),cex.axis=cex.axis)
+title(xlab=expression(Lake~Area~(m^2)), line=4, cex.lab=cex.lab)
+text(x = log10(100),y = log10(10000),labels = 'A',cex = cex)
+
+heatscatter(log10(all$Area),all$HRT/365,pch = 19,colpal = col,cex=cex,main='',cex.axis=cex.axis,cex.lab=cex.lab,
+            xlab='',ylab='HRT (years)',xaxt='n')
+# axis(2,at = c(log10(1),log10(10),log10(100),log10(1000),log10(10000)),labels = c(1,10,100,1000,10000),cex.axis=cex.axis)
+axis(1,at = c(log10(100),log10(10000),log10(1000000)),labels = c(100,10000,1000000),cex.axis=cex.axis)
+title(xlab=expression(Lake~Area~(m^2)), line=4, cex.lab=cex.lab)
+text(x = log10(100),y = 6.7,labels = 'B',cex = cex)
+
+heatscatter(log10(all$Area),all$percentEvap,pch = 19,colpal = col,cex=cex,main='',cex.axis=cex.axis,cex.lab=cex.lab,
+            xlab='',ylab='Fraction Export as Evap',xaxt='n')
+# axis(2,at = c(log10(1),log10(10),log10(100),log10(1000),log10(10000)),labels = c(1,10,100,1000,10000),cex.axis=cex.axis)
+axis(1,at = c(log10(100),log10(10000),log10(1000000)),labels = c(100,10000,1000000),cex.axis=cex.axis)
+title(xlab=expression(Lake~Area~(m^2)), line=4, cex.lab=cex.lab)
+text(x = log10(80),y = .88,labels = 'C',cex = cex)
+dev.off
+##############################
+# figure 5; carbon processing with HRT and Frac Retained
+#################################
+png('/Users/jzwart/NHLD_C_Model/Figures/Fig5_Cproc_HRT.png',width = 21,
+    height=7,units = 'in',res = 300)
+par(mar=c(6,6,5,2), mfrow=c(1,3))
+cex.axis=3
+cex.lab=2.8
+cex=3
+col=colorpalette(c('grey70','black'))
+heatscatter(log10(all$HRT),all$FracRet,pch = 19,colpal = col,cex=cex,main='',cex.axis=cex.axis,cex.lab=cex.lab,ylim=c(0,1),
+            ylab='Fraction Retained',xlab='HRT (days)',xaxt='n')
+axis(1,at = c(log10(0.10),log10(1),log10(10),log10(100),log10(1000)),labels = c(0.1,1,10,100,1000),cex.axis=cex.axis)
+points(log10(litFracRet$HRT_yrs[litFracRet$LakeType=='Drainage']*365),
+       litFracRet$C_ret_proportion[litFracRet$LakeType=='Drainage'],pch=19,col='blue',cex=cex)
+points(log10(litFracRet$HRT_yrs[litFracRet$LakeType=='Seepage'|litFracRet$LakeType=='UNDERC_Long']*365),
+       litFracRet$C_ret_proportion[litFracRet$LakeType=='Seepage'|litFracRet$LakeType=='UNDERC_Long'],pch=19,col='red',cex=cex)
+legend('topleft',legend = c('Modeled','Literature Drainage','Literature Seepage'),
+       col=c('grey 40','blue','red'),bty = 'n',pch = 19,cex = 1.5,pt.cex = 2)
+text(x = log10(1),y = 0,labels = 'A',cex = cex)
+
+heatscatter(log10(all$HRT),log10(all$DOC_Respired/all$Area*12*365),pch = 19,colpal = col,cex=cex,main='',cex.axis=cex.axis,cex.lab=cex.lab,xaxt='n',
+            xlab='HRT (days)',ylab=expression(DOC~Respired~(g~C~m^-2~yr^-1)),yaxt='n')
+axis(2,at = c(log10(0.10),log10(1),log10(10),log10(100),log10(1000)),labels = c(0.1,1,10,100,1000),cex.axis=cex.axis)
+axis(1,at = c(log10(0.10),log10(1),log10(10),log10(100),log10(1000)),labels = c(0.1,1,10,100,1000),cex.axis=cex.axis)
+text(x = log10(1),y = log10(3),labels = 'B',cex = cex)
+
+heatscatter(all$FracRet,log10(all$DOC_Respired/all$Area*12*365),pch = 19,colpal = col,cex=cex,main='',cex.axis=cex.axis,cex.lab=cex.lab,xlim=c(0,1),
+            xlab='Fraction Retained',ylab=expression(DOC~Respired~(g~C~m^-2~yr^-1)),yaxt='n')
+axis(2,at = c(log10(0.10),log10(1),log10(10),log10(100),log10(1000)),labels = c(0.1,1,10,100,1000),cex.axis=cex.axis)
+text(x = 0,y = log10(3),labels = 'C',cex = cex)
+dev.off()
+#figure 6; c processing ~ FHEE 
+############################
+png('/Users/jzwart/NHLD_C_Model/Figures/Fig6_fracRet_fracEvap.png',width = 21,
+    height=7,units = 'in',res = 300)
+par(mar=c(6,6,5,2), mfrow=c(1,3))
+cex.axis=3
+cex.lab=2.8
+cex=3
+col=colorpalette(c('grey70','black'))
+heatscatter(all$percentEvap,all$FracRet,pch = 19,colpal = col,cex=cex,main='',cex.axis=cex.axis,cex.lab=cex.lab,xlim=c(0,1),
+            xlab='Fraction Export as Evap',ylab='Fraction Retained')
+text(x = 1,y = .95,labels = 'A',cex = cex)
+
+heatscatter(all$percentEvap,log10(all$Emit/all$Area*12*365),pch = 19,colpal = col,cex=cex,main='',cex.axis=cex.axis,cex.lab=cex.lab,xlim=c(0,1),
+            xlab='Fraction Export as Evap',ylab=expression(Emissions~(g~C~m^-2~yr^-1)),yaxt='n',ylim=c(log10(3),log10(1000)))
+axis(2,at = c(log10(1),log10(10),log10(100),log10(1000)),labels = c(1,10,100,1000),cex.axis=cex.axis)
+text(x = 1,y = log10(1000),labels = 'B',cex = cex)
+
+heatscatter(all$percentEvap,log10((all$Burial_tPOC+all$Burial_phyto)/all$Area*12*365),pch = 19,colpal = col,cex=cex,main='',cex.axis=cex.axis,cex.lab=cex.lab,xlim=c(0,1),
+            xlab='Fraction Export as Evap',ylab=expression(Burial~(g~C~m^-2~yr^-1)),yaxt='n',ylim=c(log10(.5),log10(100)))
+axis(2,at = c(log10(1),log10(10),log10(100),log10(1000)),labels = c(1,10,100,1000),cex.axis=cex.axis)
+text(x = 1,y = log10(100),labels = 'C',cex = cex)
+dev.off()
+#figure 7; DICload:DICproduced ~ FHEE 
+#################################
+png('/Users/jzwart/NHLD_C_Model/Figures/Fig7_dictoResp_fracEvap.png',width = 14,
+    height=7,units = 'in',res = 300)
+par(mar=c(6,6,5,2), mfrow=c(1,2))
+cex.axis=2.5
+cex.lab=2.3
+cex=2.5
+col=colorpalette(c('grey70','black'))
+heatscatter(all$percentEvap,log10(all$dicLoadvResp),pch = 19,colpal = col,cex=cex,main='',cex.axis=cex.axis,cex.lab=cex.lab,
+            xlab='Fraction Export as Evap',ylab='DIC Load : DIC Produced',yaxt='n')
+axis(2,at = c(log10(0.10),log10(1),log10(10),log10(100),log10(1000),log10(10000)),labels = c(0.1,1,10,100,1000,10000),cex.axis=cex.axis)
+abline(h=log10(1),lty=2,lwd=2)
+text(x = .9,y = log10(200),labels = 'A',cex = cex)
+
+heatscatter(log10(all$Emit/all$Area*12*365),log10(all$dicLoadvResp),pch = 19,colpal = col,cex=cex,main='',cex.axis=cex.axis,cex.lab=cex.lab,
+            xlab=expression(Emissions~(g~C~m^-2~yr^-1)),ylab='DIC Load : DIC Produced',yaxt='n',xaxt='n',xlim=c(log10(3),log10(1000)))
+axis(2,at = c(log10(0.10),log10(1),log10(10),log10(100),log10(1000),log10(10000)),labels = c(0.1,1,10,100,1000,10000),cex.axis=cex.axis)
+axis(1,at = c(log10(0.10),log10(1),log10(10),log10(100),log10(1000),log10(10000)),labels = c(0.1,1,10,100,1000,10000),cex.axis=cex.axis)
+abline(h=log10(1),lty=2,lwd=2)
+points(log10(all$Emit[sum$NEP>0]/all$Area[sum$NEP>0]*12*365),log10(all$dicLoadvResp[sum$NEP>0]),col='green',cex=cex,
+       pch=16)
+legend('topleft',legend = c('Heterotrophic','Autotrophic'),
+       col=c('grey 40','green'),bty = 'n',pch = 19,cex = 1.5,pt.cex = 2)
+text(x = log10(1000),y = log10(.2),labels = 'B',cex = cex)
+dev.off()
+######################
+#figure 8; regional C flux 
+#############
+# allFlux=c(ndAnnualEmit,ndAnnualBurial,ndOpenIceEmit,ndOpenIceBurial,coleEmit,coleBury,coleEmitRes,
+          # coleBuryRes,raymondEmit)
+png('/Users/jzwart/NHLD_C_Model/Figures/Fig8_annualEmit_burial.png',
+    width = 7,height = 7,units='in',res = 300)
+bp.at=c(0,0,1,0,1,0,1,0,1)
+par(mar=c(6,6,5,4))
+barplot(allFlux,space = bp.at,col=c('gray80','gray20'),border = 'black',lwd=2,cex.axis = 2,cex.lab=2,ylab=expression(Carbon~Flux~(Gg~C~yr^-1)))
+legend('topleft',legend = c('Emissions','Burial'),col = c('gray80','gray20'),bty = 'n',fill = c('gray80','gray20'),cex=2)
+axis(1,at = c(1,4,7,10,13),labels = c(expression(atop(Annual)),expression(atop(Open~Ice)),expression(atop(Cole,Lakes)),
+                                      expression(atop(Cole,Lakes + Res)),expression(atop(Raymond,Lakes + Res))),
+                                      lwd = 0,lwd.ticks = 0,line = 1,cex.axis=1.1)
+dev.off()
+
+###########
+#figure 9; total C emit and burial 
+#############
+png('/Users/jzwart/NHLD_C_Model/Figures/Fig9_fracEmitBury_fracLakes.png',width = 14,height = 7,res=300,units='in')
+par(mar=c(6,6,5,2),mfrow=c(1,2))
+cex.axis=2.5
+cex.lab=2.5
+lwd=8
+pch=16
+cex=2
+temp=all[sort.list(all$Emit),]
+temp$i=seq(1,nrow(temp),1)/nrow(temp)
+temp$EmitFrac=temp$Emit/sum(temp$Emit)
+temp$EmitFrac=cumsum(temp$EmitFrac)
+plot(temp$i~temp$EmitFrac,cex=cex,pch=pch,lwd=lwd,xlab='Fraction of Total Emissions',ylab='Cumulative Fraction',cex.lab=cex.lab,cex.axis=cex.axis)
+v=0.1
+h=temp$i[min(which(temp$EmitFrac>v))] # fraction of lakes for which 90% of emissions are accounted for  
+abline(h=h,lty=2,lwd=3)
+abline(v=v,lty=2,lwd=3)
+print(1-h)
+text(x = 1,y = 0,labels = 'A',cex = cex)
+
+temp=all[sort.list(all$Burial_phyto+all$Burial_tPOC),]
+temp$i=seq(1,nrow(temp),1)/nrow(temp)
+temp$BuryFrac=(temp$Burial_tPOC+temp$Burial_phyto)/sum(temp$Burial_tPOC+temp$Burial_phyto)
+temp$BuryFrac=cumsum(temp$BuryFrac)
+plot(temp$i~temp$BuryFrac,cex=cex,pch=pch,lwd=lwd,xlab='Fraction of Total Burial',ylab='',cex.lab=cex.lab,cex.axis=cex.axis)
+v=0.1
+h=temp$i[min(which(temp$BuryFrac>v))] # fraction of lakes for which 90% of emissions are accounted for  
+abline(h=h,lty=2,lwd=3)
+abline(v=v,lty=2,lwd=3)
+print(1-h)
+text(x = 1,y = 0,labels = 'B',cex = cex)
+dev.off() 
+#######
+
+
+
+
+
+
+
 # cumulative fraction 
 png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/hanson_doc_cumFreq.png',
     width = 7,height = 7,res = 300,units = 'in')
@@ -1317,14 +1668,14 @@ for(i in 1:length(ntlLookUp$lakeID)){
     assign(paste(as.character(ntlLookUp$lakeID[i]),'Cout',sep=''),cur)
 }
 
-
+#figure 2; NTL validation 
 ###################################
 ntlMod_Obs=data.frame(lakeID=rep(NA,7),DOC_mod=rep(NA,7),DOC_obs=rep(NA,7),DOC_cor=rep(NA,7),SRP_mod=rep(NA,7),SRP_obs=rep(NA,7),
                       SRP_cor=rep(NA,7),TP_mod=rep(NA,7),TP_obs=rep(NA,7),TP_cor=rep(NA,7),pH_mod=rep(NA,7),pH_obs=rep(NA,7),pH_cor=rep(NA,7),DIC_mod=rep(NA,7),
                       DIC_obs=rep(NA,7),DIC_cor=rep(NA,7),Chl_mod=rep(NA,7),Chl_obs=rep(NA,7),Chl_cor=rep(NA,7),Wtr_mod=rep(NA,7),Wtr_obs=rep(NA,7),Wtr_cor=rep(NA,7))
 # TR ****************************************************
 # windows()
-png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/NTL_validation_all.png',
+png('/Users/jzwart/NHLD_C_Model/Figures/Fig2_NTL_validation_all.png',
     width=21,height = 21,res=300,units='in')
 xlim=c(as.POSIXct('1987-01-01 00:00:00'),max(as.POSIXct(TRCout$datetime)))
 ylim=c(2,7)
@@ -1335,7 +1686,7 @@ phYlim=c(3,9)
 dicYlim=c(0,14)
 chlYlim=c(0,21)
 wtrYlim=c(0,25)
-par(mfrow=c(7,7),mar=c(5,6,2,2))
+par(mfrow=c(7,7),mar=c(5,6,4,4))
 cex=2
 lwd=2
 cex.axis=2
@@ -1360,6 +1711,7 @@ ylim=range(temp$doc,tempntl$doc)
 plot(temp$doc~temp$month,pch=16,type='o',ylim=docYlim,cex=cex,lwd=lwd,cex.axis=cex.axis,cex.lab=cex.lab,ylab='DOC (mg L-1)',
      xlab='')
 points(tempntl$doc~tempntl$month,col='grey60',pch=16,type='o',cex=cex,lwd=lwd)
+title(main = 'DOC',cex.main=4,line = 1)
 
 ntlMod_Obs$lakeID[1]='TR'
 ntlMod_Obs$DOC_mod[1]=mean(temp$doc)
@@ -1390,6 +1742,7 @@ ylim=range(temp$srp,tempntl$srp)
 plot(temp$srp~temp$month,pch=16,type='o',ylim=srpYlim,cex=cex,lwd=lwd,cex.axis=cex.axis,cex.lab=cex.lab,ylab='SRP (ug L-1)',
      xlab='')
 points(tempntl$srp~tempntl$month,col='grey60',pch=16,type='o',cex=cex,lwd=lwd)
+title(main = 'SRP',cex.main=4,line = 1)
 
 ntlMod_Obs$SRP_mod[1]=mean(temp$srp)
 ntlMod_Obs$SRP_obs[1]=mean(tempntl$srp)
@@ -1419,6 +1772,7 @@ ylim=range(temp$tp,tempntl$tp)
 plot(temp$tp~temp$month,pch=16,type='o',ylim=tpYlim,cex=cex,lwd=lwd,cex.axis=cex.axis,cex.lab=cex.lab,ylab='TP (ug L-1)',
      xlab='')
 points(tempntl$tp~tempntl$month,col='grey60',pch=16,type='o',cex=cex,lwd=lwd)
+title(main = 'TP',cex.main=4,line = 1)
 
 ntlMod_Obs$TP_mod[1]=mean(temp$tp)
 ntlMod_Obs$TP_obs[1]=mean(tempntl$tp)
@@ -1448,6 +1802,7 @@ ylim=range(temp$pH,tempntl$pH)
 plot(temp$pH~temp$month,pch=16,type='o',ylim=phYlim,cex=cex,lwd=lwd,cex.axis=cex.axis,cex.lab=cex.lab,ylab='pH',
      xlab='')
 points(tempntl$pH~tempntl$month,col='grey60',pch=16,type='o',cex=cex,lwd=lwd)
+title(main = 'pH',cex.main=4,line = 1)
 
 ntlMod_Obs$pH_mod[1]=mean(temp$pH)
 ntlMod_Obs$pH_obs[1]=mean(tempntl$pH)
@@ -1477,6 +1832,7 @@ ylim=range(temp$dic,tempntl$dic)
 plot(temp$dic~temp$month,pch=16,type='o',ylim=dicYlim,cex=cex,lwd=lwd,cex.axis=cex.axis,cex.lab=cex.lab,ylab='DIC (mg L-1)',
      xlab='')
 points(tempntl$dic~tempntl$month,col='grey60',pch=16,type='o',cex=cex,lwd=lwd)
+title(main = 'DIC',cex.main=4,line = 1)
 
 ntlMod_Obs$DIC_mod[1]=mean(temp$dic)
 ntlMod_Obs$DIC_obs[1]=mean(tempntl$dic)
@@ -1506,6 +1862,7 @@ ylim=range(temp$chl,tempntl$chl)
 plot(temp$chl~temp$month,pch=16,type='o',ylim=chlYlim,cex=cex,lwd=lwd,cex.axis=cex.axis,cex.lab=cex.lab,ylab='Chl (ug L-1)',
      xlab='')
 points(tempntl$chl~tempntl$month,col='grey60',pch=16,type='o',cex=cex,lwd=lwd)
+title(main = 'Chl',cex.main=4,line = 1)
 
 ntlMod_Obs$Chl_mod[1]=mean(temp$chl)
 ntlMod_Obs$Chl_obs[1]=mean(tempntl$chl)
@@ -1530,6 +1887,8 @@ ylim=range(temp$wtr,tempntl$wtr)
 plot(temp$wtr~temp$month,pch=16,type='o',ylim=wtrYlim,cex=cex,lwd=lwd,cex.axis=cex.axis,cex.lab=cex.lab,ylab='Epi Temp (deg C)',
      xlab='')
 points(tempntl$wtr~tempntl$month,col='grey60',pch=16,type='o',cex=2)
+title(main = 'Wtr',cex.main=4,line = 1)
+mtext(text = 'TR',side = 4,cex = 2,las=1)
 
 ntlMod_Obs$Wtr_mod[1]=mean(temp$wtr)
 ntlMod_Obs$Wtr_obs[1]=mean(tempntl$wtr)
@@ -1739,6 +2098,7 @@ ylim=range(temp$wtr,tempntl$wtr)
 plot(temp$wtr~temp$month,pch=16,type='o',ylim=wtrYlim,cex=cex,lwd=lwd,cex.axis=cex.axis,cex.lab=cex.lab,ylab='Epi Temp (deg C)',
      xlab='')
 points(tempntl$wtr~tempntl$month,col='grey60',pch=16,type='o',cex=2)
+mtext(text = 'CR',side = 4,cex = 2,las=1)
 
 ntlMod_Obs$Wtr_mod[2]=mean(temp$wtr)
 ntlMod_Obs$Wtr_obs[2]=mean(tempntl$wtr)
@@ -1948,6 +2308,7 @@ ylim=range(temp$wtr,tempntl$wtr)
 plot(temp$wtr~temp$month,pch=16,type='o',ylim=wtrYlim,cex=cex,lwd=lwd,cex.axis=cex.axis,cex.lab=cex.lab,ylab='Epi Temp (deg C)',
      xlab='')
 points(tempntl$wtr~tempntl$month,col='grey60',pch=16,type='o',cex=2)
+mtext(text = 'CB',side = 4,cex = 2,las=1)
 
 ntlMod_Obs$Wtr_mod[3]=mean(temp$wtr)
 ntlMod_Obs$Wtr_obs[3]=mean(tempntl$wtr)
@@ -2156,6 +2517,7 @@ ylim=range(temp$wtr,tempntl$wtr)
 plot(temp$wtr~temp$month,pch=16,type='o',ylim=wtrYlim,cex=cex,lwd=lwd,cex.axis=cex.axis,cex.lab=cex.lab,ylab='Epi Temp (deg C)',
      xlab='')
 points(tempntl$wtr~tempntl$month,col='grey60',pch=16,type='o',cex=2)
+mtext(text = 'BM',side = 4,cex = 2,las=1)
 
 ntlMod_Obs$Wtr_mod[4]=mean(temp$wtr)
 ntlMod_Obs$Wtr_obs[4]=mean(tempntl$wtr)
@@ -2365,6 +2727,7 @@ ylim=range(temp$wtr,tempntl$wtr)
 plot(temp$wtr~temp$month,pch=16,type='o',ylim=wtrYlim,cex=cex,lwd=lwd,cex.axis=cex.axis,cex.lab=cex.lab,ylab='Epi Temp (deg C)',
      xlab='')
 points(tempntl$wtr~tempntl$month,col='grey60',pch=16,type='o',cex=2)
+mtext(text = 'SP',side = 4,cex = 2,las=1)
 
 ntlMod_Obs$Wtr_mod[5]=mean(temp$wtr)
 ntlMod_Obs$Wtr_obs[5]=mean(tempntl$wtr)
@@ -2573,6 +2936,7 @@ ylim=range(temp$wtr,tempntl$wtr)
 plot(temp$wtr~temp$month,pch=16,type='o',ylim=wtrYlim,cex=cex,lwd=lwd,cex.axis=cex.axis,cex.lab=cex.lab,ylab='Epi Temp (deg C)',
      xlab='')
 points(tempntl$wtr~tempntl$month,col='grey60',pch=16,type='o',cex=2)
+mtext(text = 'AL',side = 4,cex = 2,las=1)
 
 ntlMod_Obs$Wtr_mod[6]=mean(temp$wtr)
 ntlMod_Obs$Wtr_obs[6]=mean(tempntl$wtr)
@@ -2583,10 +2947,10 @@ ntlMod_Obs$Wtr_cor[6]=cor(temp$wtr[temp$month%in%tempntl$month],tempntl$wtr)
 
 # TB ****************************************************
 # windows()
-png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/TB_increasedWetland_validation.png',width=14,height = 28,res=300,units='in')
+# png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/TB_increasedWetland_validation.png',width=14,height = 28,res=300,units='in')
 # xlim=c(as.POSIXct('1987-01-01 00:00:00'),max(as.POSIXct(TBCout$datetime)))
 ylim=c(2,30)
-par(mfrow=c(4,2),mar=c(5,6,2,2))
+# par(mfrow=c(4,2),mar=c(5,6,2,2))
 cex=2
 lwd=2
 cex.axis=2
@@ -2781,6 +3145,7 @@ ylim=range(temp$wtr,tempntl$wtr)
 plot(temp$wtr~temp$month,pch=16,type='o',ylim=wtrYlim,cex=cex,lwd=lwd,cex.axis=cex.axis,cex.lab=cex.lab,ylab='Epi Temp (deg C)',
      xlab='')
 points(tempntl$wtr~tempntl$month,col='grey60',pch=16,type='o',cex=2)
+mtext(text = 'TB',side = 4,cex = 2,las=1)
 
 ntlMod_Obs$Wtr_mod[7]=mean(temp$wtr)
 ntlMod_Obs$Wtr_obs[7]=mean(tempntl$wtr)
