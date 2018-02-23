@@ -15,7 +15,7 @@ skip=6*365 # days to skip
 sum<-data.frame() # only open ice
 all<-data.frame()
 val<-data.frame()
-for(i in 1:length(files)){
+for(i in 3130:length(files)){
   cur<-read.table(file.path(dir,files[i]),stringsAsFactors = F,sep='\t',header=T)
   lake<-strsplit(files[i],'_C_model.txt',fixed = T)[[1]]
   cur<-na.omit(cur)
@@ -37,22 +37,32 @@ for(i in 1:length(files)){
   cur<-cur[cur$Vol>0,] # only keeping days when there's actually water
   curSum=cur[cur$LakeE>0,] # only open ice periods
   
+  # number of days that are stratified; based on mixed layer depth compared to max depth 
+  ndays_strat = length(cur[cur$zmix<cur$Stage,1])
+  ndays_open_ice = nrow(curSum)
+  
   cur<-data.frame(t(apply(cur,MARGIN = 2,FUN = mean)))
   curSum<-data.frame(t(apply(curSum,MARGIN = 2,FUN = mean)))
   curVal<-data.frame(t(apply(curVal,MARGIN = 2,FUN=mean)))
   cur$Permanent_<-lake
   curSum$Permanent_<-lake
   curVal$Permanent_<-lake
+  cur$ndays_strat <- ndays_strat
+  cur$ndays_open_ice <- ndays_open_ice
 
   sum<-rbind(sum,curSum)
   all<-rbind(all,cur)
   val<-rbind(val,curVal)
+  
+  print(i)
 }
+
+length(all[all$ndays_strat<4639,1])
 
 sum2=sum
 
 # 
-load('/Users/jzwart/NHLD_C_Model/R_Data/LakeCsummary_20170828.RData')
+load('/Users/jzwart/NHLD_C_Model/R_Data/LakeCsummary_20171107.RData')
 
 watersheds<-read.table('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Data/C model forcing data/NHLDsheds_20170323.txt',
                        stringsAsFactors = F,header=T,sep = '\t')
@@ -603,6 +613,10 @@ heatscatter(log10(all$Area),all$emergent_d_epi,pch = 19,colpal = col,cex=cex,mai
 axis(1,at = c(log10(100),log10(10000),log10(1000000)),labels = c(100,10000,1000000),cex.axis=cex.axis)
 dev.off()
 
+# agriculture classification relationships with 
+all$percentAg <- (all$NLCDV82)/all$NLCDVSUM
+
+summary(all$percentAg)
 
 plot(all$percentEvap~all$HRT)
 
@@ -1127,9 +1141,9 @@ dev.off()
 ####################
 # figure 4; hydrologic characteristics as function of lake size
 #####################
-png('/Users/jzwart/NHLD_C_Model/Figures/Fig4_hydro_area.png',width = 21,
-    height=7,units = 'in',res = 300)
-par(mar=c(6,6,5,2), mfrow=c(1,3))
+png('/Users/jzwart/NHLD_C_Model/Figures/Fig4_hydro_area_rev1.png',width = 14,
+    height=14,units = 'in',res = 300)
+par(mar=c(6,6,5,2), mfrow=c(2,2))
 cex.axis=3
 cex.lab=2.8
 cex=3
@@ -1154,7 +1168,12 @@ heatscatter(log10(all$Area),all$percentEvap,pch = 19,colpal = col,cex=cex,main='
 axis(1,at = c(log10(100),log10(10000),log10(1000000)),labels = c(100,10000,1000000),cex.axis=cex.axis)
 title(xlab=expression(Lake~Area~(m^2)), line=4, cex.lab=cex.lab)
 text(x = log10(80),y = .88,labels = 'C',cex = cex)
-dev.off
+
+heatscatter(all$percentEvap,all$HRT/365,pch = 19,colpal = col,cex=cex,main='',cex.axis=cex.axis,cex.lab=cex.lab,
+            ylab='HRT (years)',xlab='Fraction Export as Evap')
+text(x = .05,y = 6.7,labels = 'D',cex = cex)
+
+dev.off()
 ##############################
 # figure 5; carbon processing with HRT and Frac Retained
 #################################
