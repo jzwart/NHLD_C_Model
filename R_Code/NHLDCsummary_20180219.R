@@ -140,6 +140,7 @@ plot(log10(sum$DOC_Load)~sum$HRT)
 
 litFracRet<-read.csv('/Users/jzwart/Documents/Jake/Conferences/2015/Gordon Research Conference/GRC/DrainageVseepage_Cretention.csv',
                      stringsAsFactor=F)
+litFracRet<-read.csv('/Users/jzwart/NHLD_C_Model/Tables/lit_C_budgets.csv',stringsAsFactors = F)
 sum$percentEvap<-sum$LakeE/(sum$LakeE+sum$GWout+sum$SWout)
 all$percentEvap<-all$LakeE/(all$LakeE+all$GWout+all$SWout)
 
@@ -792,6 +793,13 @@ boxplot(all$Emit/all$Area~all$lakeSizeBins)
 anova(lm(all$k~all$lakeSizeBins))
 
 
+# burial efficiency 
+all$burial_efficiency<-(all$Burial_phyto+all$Burial_tPOC)/(all$Sed_phyto+all$Sed_tPOC)
+sum$burial_efficiency<-(sum$Burial_phyto+sum$Burial_tPOC)/(sum$Sed_phyto+sum$Sed_tPOC)
+
+hist(all$burial_efficiency)
+summary(all$burial_efficiency)
+
 png('/Users/jzwart/Documents/Jake/MyPapers/Regional Lake Carbon Model - ECI/Figures/fig8_fracEmitBury_fracLakes.png',width = 14,height = 7,res=300,units='in')
 par(mar=c(6,6,5,2),mfrow=c(1,2))
 cex.axis=2.5
@@ -822,6 +830,48 @@ abline(v=v,lty=2,lwd=3)
 print(1-h)
 dev.off() 
 
+
+
+## fraction of epilimnion and hypolimnion at sediment water interface 
+dir <- 'F:/Jake/My Papers/NHLD Carbon Model/20170815/OUT_RESULTS/'
+files <- list.files(dir)
+files <- files[grep('IniLakeProp',files)]
+all_prop <- data.frame()
+for(i in 1:nrow(all)){
+  cur_lake = all$Permanent_[i]
+  cur_file = paste(cur_lake,'IniLakeProp.txt',sep='_')
+  cur_prop <- read.table(file.path(dir,cur_file),stringsAsFactors = F,header = F)
+  colnames(cur_prop)<-c('Area0','Vol0','Radius0','Diameter0','Perim0','Stage0','DL','r2h','WA','WALA','Elev0_DEM','Vol_LinRes','Stage_LinRes','Stream_WA')
+  
+  cur_prop$Permanent_ = cur_lake
+  
+  all_prop <- rbind(all_prop,cur_prop)
+  print(i)
+}
+
+all <- merge(all,all_prop,by='Permanent_',all.x=T)
+sum <- merge(sum,all_prop,by='Permanent_',all.x=T)
+
+# mean radius of top epi and top hypo 
+all$r1=all$r2h*all$Stage
+all$r2=all$r2h*(all$Stage-all$zmix)
+all$sed_area_epi = (all$r1^2*pi)-(all$r2^2*pi) # area of surface minus area of bottom epi 
+all$sed_area_hypo = all$r2^2*pi
+
+all$sedEpi_to_sedHypo = all$sed_area_epi/sum$sed_area_hypo
+
+sum$r1=sum$r2h*sum$Stage
+sum$r2=sum$r2h*(sum$Stage-sum$zmix)
+sum$sed_area_epi = (sum$r1^2*pi)-(sum$r2^2*pi) # area of surface minus area of bottom epi 
+sum$sed_area_hypo = sum$r2^2*pi
+
+sum$sedEpi_to_sedHypo = sum$sed_area_epi/sum$sed_area_hypo
+
+summary(sum$sedEpi_to_sedHypo)
+hist(sum$sedEpi_to_sedHypo)
+
+# mean temperature for sediment water interface based on epi/ hypo split 
+sum$sed_temp = (sum$epiTemp*sum$sed_area_epi+sum$hypoTemp*sum$sed_area_hypo)/(sum$sed_area_epi+sum$sed_area_hypo)
 
 
 temp=all[sort.list(all$Burial_phyto+all$Burial_tPOC),]
@@ -1001,6 +1051,50 @@ axis(1,at = c(1,4,7),labels = c(expression(atop(Count)),expression(atop(Area)),e
      lwd = 0,lwd.ticks = 0,line = 2.5,cex.axis=2)
 text(x = 8,y = .95,labels = 'B',cex = cex)
 dev.off()
+## 
+
+lagos <- maptools::readShapeSpatial('/Users/jzwart/NHLD_C_Model/Data/LAGOS_watersheds/IWS.shp')
+
+lagos$WALA <- lagos$IWSAreaHa/lagos$LakeAreaHa
+
+evans <- read.csv('/Users/jzwart/Documents/Jake/MyPapers/Response to Evans et al 2017/ngeo3051-s2.csv',stringsAsFactors = F)
+
+evans$WALA <- evans$Catchment/evans$Waterbody
+evans$C_ret_proportion <- (evans$DOCin-evans$DOCout)/evans$DOCin
+
+summary(lagos$WALA)
+
+png('/Users/jzwart/NHLD_C_Model/Figures/Fig1_fracRet_lit_rev1.png',width = 7,height = 7,res=300,units='in')
+par(mar=c(6,6,5,2),mfrow=c(1,1))
+cex.axis=2.3
+cex.lab=2.3
+lwd=8
+pch=16
+cex=2.5
+# plot(litFracRet$HRT_yrs,litFracRet$C_ret_proportion,pch=19,col=rgb(0,0,0,alpha = .3),cex=log(litFracRet$WALA),ylim=c(0,1),cex.axis=cex.axis,cex.lab=cex.lab,
+#      xlab='HRT (Years)', ylab='Fraction Retained')
+# text(x = 13,y = .95,labels = 'A',cex = cex)
+# points(evans$WRT[evans$EvansClass=='sink'],evans$C_ret_proportion[evans$EvansClass=='sink'],pch=16,col=rgb(0,0,0,alpha=.3),cex=log(evans$WALA[evans$EvansClass=='sink']))
+# 
+# plot(litFracRet$HRT_yrs[litFracRet$inEvans==0],litFracRet$C_ret_proportion[litFracRet$inEvans==0],
+#      pch=19,col=rgb(0,0,0,alpha = 0.3),cex=log(litFracRet$WALA[litFracRet$inEvans==0]),ylim=c(0,1),cex.axis=cex.axis,cex.lab=cex.lab,
+#      xlab='HRT (Years)', ylab='Fraction Retained',xlim=c(0,20))
+# points(evans$WRT[evans$EvansClass=='sink'],evans$C_ret_proportion[evans$EvansClass=='sink'],
+#        pch=16,col=rgb(0,0,0,alpha=.3),cex=log(evans$WALA[evans$EvansClass=='sink']))
+plot(evans$WRT[evans$EvansClass=='sink'],evans$C_ret_proportion[evans$EvansClass=='sink'],
+     pch=16,col=rgb(0,0,0,alpha=.3),cex=log(evans$WALA[evans$EvansClass=='sink']),xlim=c(0,20),ylim=c(0,0.8),cex.axis=cex.axis,cex.lab=cex.lab,
+     xlab='HRT (Years)', ylab='Fraction Mineralized')
+dev.off()
+# plot(log(evans$WRT[evans$EvansClass=='sink']),evans$C_ret_proportion[evans$EvansClass=='sink'],
+#      pch=16,col=rgb(0,0,0,alpha=.3),cex=log(evans$WALA[evans$EvansClass=='sink']),ylim=c(0,.8))
+
+summary(lm(evans$C_ret_proportion[evans$EvansClass=='sink']~log10(evans$WRT[evans$EvansClass=='sink'])+log10(evans$WALA[evans$EvansClass=='sink'])))
+summary(lm(evans$C_ret_proportion[evans$EvansClass=='sink']~log(evans$WRT[evans$EvansClass=='sink'])))
+
+# boxplot(lagos$WALA,outline = F,ylim=c(0,60))
+# boxplot(litFracRet$WALA,outline = F,ylim=c(0,60))
+# boxplot(evans$WALA,outline = F)
+
 
 ##########
 # figure 3; cumulative fraction plots
@@ -1166,6 +1260,11 @@ heatscatter(all$percentEvap,all$HRT/365,pch = 19,colpal = col,cex=cex,main='',ce
             ylab='HRT (years)',xlab='Fraction Export as Evap')
 text(x = .05,y = 6.7,labels = 'D',cex = cex)
 
+heatscatter(log10(all$WALA),all$percentEvap,pch = 19,colpal = col,cex=cex,main='',cex.axis=cex.axis,cex.lab=cex.lab,xaxt='n',
+            xlab='WA:LA',ylab='Fraction Export as Evap')
+axis(1,at = c(log10(1),log10(10),log10(100),log10(1000),log10(10000)),labels = c(1,10,100,1000,10000),cex.axis=cex.axis)
+text(y = .9,x = log10(10000),labels = 'E',cex = cex)
+
 dev.off()
 ##############################
 # figure 5; carbon processing with HRT and Frac Retained
@@ -1199,9 +1298,46 @@ heatscatter(all$FracRet,log10(all$DOC_Respired/all$Area*12*365),pch = 19,colpal 
 axis(2,at = c(log10(0.10),log10(1),log10(10),log10(100),log10(1000)),labels = c(0.1,1,10,100,1000),cex.axis=cex.axis)
 text(x = 0,y = log10(3),labels = 'C',cex = cex)
 dev.off()
+
+png('/Users/jzwart/NHLD_C_Model/Figures/Fig5_Cproc_HRT_rev1.png',width = 21,
+    height=7,units = 'in',res = 300)
+par(mar=c(6,6,5,2), mfrow=c(1,3))
+cex.axis=3
+cex.lab=2.8
+cex=3
+col=colorpalette(c('grey70','black'))
+heatscatter(log10(all$HRT),all$FracRet,pch = 19,colpal = col,cex=log(all$WALA),main='',cex.axis=cex.axis,cex.lab=cex.lab,ylim=c(0,1),
+            ylab='Fraction Mineralized',xlab='HRT (days)',xaxt='n')
+axis(1,at = c(log10(0.10),log10(1),log10(10),log10(100),log10(1000)),labels = c(0.1,1,10,100,1000),cex.axis=cex.axis)
+# points(log10(litFracRet$HRT_yrs[litFracRet$LakeType=='Drainage']*365),
+#        litFracRet$C_ret_proportion[litFracRet$LakeType=='Drainage'],pch=19,col='blue',cex=cex)
+# points(log10(litFracRet$HRT_yrs[litFracRet$LakeType=='Seepage'|litFracRet$LakeType=='UNDERC_Long']*365),
+#        litFracRet$C_ret_proportion[litFracRet$LakeType=='Seepage'|litFracRet$LakeType=='UNDERC_Long'],pch=19,col='red',cex=cex)
+points(log10(evans$WRT[evans$EvansClass=='sink']*365),evans$C_ret_proportion[evans$EvansClass=='sink'],
+     pch=16,col='red',cex=log(evans$WALA[evans$EvansClass=='sink']),xlim=c(0,20),ylim=c(0,0.8),cex.axis=cex.axis,cex.lab=cex.lab,
+     xlab='HRT (Years)', ylab='Fraction Mineralized')
+legend('topleft',legend = c('Modeled','Literature'),
+       col=c('grey 40','red'),bty = 'n',pch = 19,cex = 1.5,pt.cex = 2)
+text(x = log10(1),y = 0,labels = 'A',cex = cex)
+
+heatscatter(log10(all$HRT),log10(all$DOC_Respired/all$Area*12*365),pch = 19,colpal = col,cex=cex,main='',cex.axis=cex.axis,cex.lab=cex.lab,xaxt='n',
+            xlab='HRT (days)',ylab=expression(DOC~Respired~(g~C~m^-2~yr^-1)),yaxt='n')
+axis(2,at = c(log10(0.10),log10(1),log10(10),log10(100),log10(1000)),labels = c(0.1,1,10,100,1000),cex.axis=cex.axis)
+axis(1,at = c(log10(0.10),log10(1),log10(10),log10(100),log10(1000)),labels = c(0.1,1,10,100,1000),cex.axis=cex.axis)
+text(x = log10(1),y = log10(3),labels = 'B',cex = cex)
+
+heatscatter(all$FracRet,log10(all$DOC_Respired/all$Area*12*365),pch = 19,colpal = col,cex=cex,main='',cex.axis=cex.axis,cex.lab=cex.lab,xlim=c(0,1),
+            xlab='Fraction Mineralized',ylab=expression(DOC~Respired~(g~C~m^-2~yr^-1)),yaxt='n')
+axis(2,at = c(log10(0.10),log10(1),log10(10),log10(100),log10(1000)),labels = c(0.1,1,10,100,1000),cex.axis=cex.axis)
+text(x = 0,y = log10(3),labels = 'C',cex = cex)
+dev.off()
+
+summary(lm(all$FracRet~log10(all$HRT)+log10(all$WALA)))
+summary(lm(evans$C_ret_proportion[evans$EvansClass=='sink'&evans$WRT<20]~log10(evans$WRT[evans$EvansClass=='sink'&evans$WRT<20])+
+             log10(evans$WALA[evans$EvansClass=='sink'&evans$WRT<20])))
 #figure 6; c processing ~ FHEE 
 ############################
-png('/Users/jzwart/NHLD_C_Model/Figures/Fig6_fracRet_fracEvap.png',width = 21,
+png('/Users/jzwart/NHLD_C_Model/Figures/Fig6_fracRet_fracEvap_rev1.png',width = 21,
     height=7,units = 'in',res = 300)
 par(mar=c(6,6,5,2), mfrow=c(1,3))
 cex.axis=3
@@ -1209,7 +1345,7 @@ cex.lab=2.8
 cex=3
 col=colorpalette(c('grey70','black'))
 heatscatter(all$percentEvap,all$FracRet,pch = 19,colpal = col,cex=cex,main='',cex.axis=cex.axis,cex.lab=cex.lab,xlim=c(0,1),
-            xlab='Fraction Export as Evap',ylab='Fraction Retained')
+            xlab='Fraction Export as Evap',ylab='Fraction Mineralized')
 text(x = 1,y = .95,labels = 'A',cex = cex)
 
 heatscatter(all$percentEvap,log10(all$Emit/all$Area*12*365),pch = 19,colpal = col,cex=cex,main='',cex.axis=cex.axis,cex.lab=cex.lab,xlim=c(0,1),
@@ -1259,7 +1395,7 @@ bp.at=c(0,0,1,0,1,0,1,0,1)
 par(mar=c(6,6,5,4))
 barplot(allFlux,space = bp.at,col=c('gray80','gray20'),border = 'black',lwd=2,cex.axis = 2,cex.lab=2,ylab=expression(Carbon~Flux~(Gg~C~yr^-1)))
 legend('topleft',legend = c('Emissions','Burial'),col = c('gray80','gray20'),bty = 'n',fill = c('gray80','gray20'),cex=2)
-axis(1,at = c(1,4,7,10,13),labels = c(expression(atop(Annual)),expression(atop(Open~Ice)),expression(atop(Cole,Lakes)),
+axis(1,at = c(1,4,7,10,13),labels = c(expression(atop(Annual)),expression(atop(Open~Water)),expression(atop(Cole,Lakes)),
                                       expression(atop(Cole,Lakes + Res)),expression(atop(Raymond,Lakes + Res))),
                                       lwd = 0,lwd.ticks = 0,line = 1,cex.axis=1.1)
 dev.off()
